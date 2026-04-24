@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Διαχείριση Παραγγελιών</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Επιπλέον στυλ για τον πίνακα */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #27ae60; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .status-pill { padding: 5px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div style="max-width: 1200px; margin: auto; padding: 20px;">
+    <h1>Λίστα Παραγγελιών</h1>
+    <button onclick="fetchOrders()">Ανανέωση Λίστας</button>
+    
+    <table id="ordersTable">
+        <thead>
+            <tr>
+                <th>Ημ/νία Παράδοσης</th>
+                <th>Πελάτης</th>
+                <th>Τηλέφωνο</th>
+                <th>Περιγραφή</th>
+                <th>Τοποθεσία</th>
+                <th>Υπόλοιπο (€)</th>
+            </tr>
+        </thead>
+        <tbody id="ordersBody">
+            </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const SUPABASE_URL = 'ΤΟ_URL_ΣΟΥ';
+    const SUPABASE_KEY = 'ΤΟ_ANON_KEY_ΣΟΥ';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function fetchOrders() {
+        const { data, error } = await _supabase
+            .from('orders')
+            .select('*')
+            .order('delivery_date', { ascending: true }); // Ταξινόμηση ανά ημερομηνία
+
+        if (error) {
+            console.error(error);
+            alert("Σφάλμα κατά τη φόρτωση");
+            return;
+        }
+
+        const tbody = document.getElementById('ordersBody');
+        tbody.innerHTML = ""; // Καθαρισμός πίνακα
+
+        data.forEach(order => {
+            const remaining = (order.total_price - order.deposit).toFixed(2);
+            const row = `
+                <tr>
+                    <td>${new Date(order.delivery_date).toLocaleDateString('el-GR')}</td>
+                    <td>${order.first_name} ${order.last_name}</td>
+                    <td>${order.phone}</td>
+                    <td>${order.description}</td>
+                    <td>${order.location_type}</td>
+                    <td style="color: ${remaining > 0 ? 'red' : 'green'}">${remaining} €</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Φόρτωση δεδομένων με το που ανοίγει η σελίδα
+    fetchOrders();
+</script>
+</body>
+</html>
