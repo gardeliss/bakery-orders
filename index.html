@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Σύστημα Παραγγελιών Ζαχαροπλαστείου</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container no-print">
+    <h2>Νέα Παραγγελία</h2>
+    <form id="orderForm">
+        <div class="row">
+            <input type="text" id="firstName" placeholder="Όνομα" required>
+            <input type="text" id="lastName" placeholder="Επώνυμο" required>
+        </div>
+        <div class="row">
+            <input type="tel" id="phone" placeholder="Τηλέφωνο" required>
+            <input type="email" id="email" placeholder="Email">
+        </div>
+        
+        <textarea id="description" placeholder="Περιγραφή Παραγγελίας (π.χ. Τούρτα σοκολάτα με σχέδιο)" rows="4" required></textarea>
+        
+        <div class="row">
+            <label>Παράδοση: <input type="date" id="deliveryDate" required></label>
+            <select id="locationType">
+                <option value="Σπίτι">Σπίτι</option>
+                <option value="Παιδότοπος">Παιδότοπος</option>
+                <option value="Καφέ">Καφέ</option>
+            </select>
+        </div>
+
+        <input type="text" id="address" placeholder="Διεύθυνση Παράδοσης">
+
+        <div class="row">
+            <input type="number" id="totalPrice" placeholder="Συνολική Τιμή (€)" step="0.01">
+            <input type="number" id="deposit" placeholder="Προκαταβολή (€)" step="0.01">
+        </div>
+
+        <label>Φωτογραφίες/Σχέδια:</label>
+        <input type="file" id="photoInput" accept="image/*" multiple>
+        <div id="imagePreview"></div>
+
+        <button type="button" onclick="preparePrint()">Εκτύπωση Παραγγελίας</button>
+    </form>
+</div>
+
+<div id="printSection" class="print-only">
+    <h1 style="text-align:center;">ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ</h1>
+    <hr>
+    <div id="printContent"></div>
+    <div id="printImages"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
