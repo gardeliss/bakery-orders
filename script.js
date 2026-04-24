@@ -1,3 +1,10 @@
+// Τοποθέτησε αυτά στην κορυφή του script.js
+const SUPABASE_URL = 'https://qfbivcxyhtndpdgndldw.supabase.co'; // Βάλε το δικό σου URL
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmYml2Y3h5aHRuZHBkZ25kbGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjAzNjUsImV4cCI6MjA5MjYzNjM2NX0.StykJvRcACbDAV8S9AnHALxUv8sIrXpJeKxdayp4jHM';      // Βάλε το δικό σου Anon Key
+
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Τώρα μπορείς να χρησιμοποιήσεις τη μεταβλητή _supabase για να στείλεις δεδομένα
 function preparePrint() {
     // Λήψη τιμών από τη φόρμα
     const data = {
