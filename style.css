@@ -1,0 +1,21 @@
+body { font-family: 'Segoe UI', sans-serif; background: #fdf2f2; padding: 20px; color: #333; }
+.container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.nav { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+.nav-link { text-decoration: none; color: #d63384; font-weight: bold; }
+h2 { color: #d63384; border-bottom: 2px solid #f8d7da; padding-bottom: 10px; }
+.row { display: flex; gap: 10px; margin-bottom: 15px; }
+input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+button { width: 100%; padding: 15px; background: #d63384; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; }
+button:hover { background: #b02a6b; }
+
+/* Cards για την αναζήτηση */
+.order-card { border: 1px solid #eee; padding: 15px; margin-top: 15px; border-radius: 10px; background: #fffafb; display: flex; justify-content: space-between; align-items: center; }
+.print-btn { width: auto; padding: 8px 15px; background: #6c757d; font-size: 14px; }
+
+/* PRINT STYLES */
+.print-only { display: none; }
+@media print {
+    .no-print { display: none; }
+    .print-only { display: block; padding: 40px; }
+    .print-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px; }
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Διαχείριση - Ζαχαροπλαστείο</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container no-print">
+        <div class="nav">
+            <a href="index.html" class="nav-link">➕ Νέα Καταχώρηση</a>
+        </div>
+        <h2>🔍 Αναζήτηση Παραγγελιών</h2>
+        <input type="text" id="searchInput" onkeyup="filterOrders()" placeholder="Αναζήτηση με Επώνυμο ή Τηλέφωνο...">
+        
+        <div id="ordersList">
+            </div>
+    </div>
+
+    <div id="printArea" class="print-only"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+    <script>
+        // Φόρτωση παραγγελιών μόλις ανοίξει η σελίδα
+        window.onload = fetchOrders;
+    </script>
+</body>
+</html>
