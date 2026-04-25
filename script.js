@@ -1,83 +1,55 @@
-// 1. Στοιχεία Σύνδεσης (Αντικατάστησε με τα δικά σου)
-const SUPABASE_URL = 'https://your-project-id.supabase.co';
-const SUPABASE_KEY = 'your-anon-key';
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_KEY = 'YOUR_ANON_KEY';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 2. Η κύρια συνάρτηση αποθήκευσης
 async function saveOrder() {
-    console.log("Η διαδικασία ξεκίνησε..."); // Έλεγχος στην κονσόλα
+    // 1. Λήψη στοιχείων από το HTML
+    // ΠΡΟΣΟΧΗ: Τα IDs μέσα στο getElementById πρέπει να υπάρχουν στο index.html
+    const fName = document.getElementById('firstName').value;
+    const lName = document.getElementById('lastName').value;
+    const phone = document.getElementById('phone').value;
+    const desc = document.getElementById('description').value;
+    const dDate = document.getElementById('deliveryDate').value;
 
-    // Συλλογή δεδομένων
+    // Απλό validation
+    if (!fName || !lName || !phone || !desc || !dDate) {
+        alert("Παρακαλώ συμπληρώστε τα βασικά πεδία (Όνομα, Επώνυμο, Τηλέφωνο, Περιγραφή, Ημερομηνία)");
+        return;
+    }
+
+    // 2. Προετοιμασία αντικειμένου για το Supabase
+    // Τα κλειδιά (αριστερά) πρέπει να είναι ΙΔΙΑ με τα ονόματα των στηλών στην SQL
     const orderData = {
-        first_name: document.getElementById('firstName').value,
-        last_name: document.getElementById('lastName').value,
-        phone: document.getElementById('phone').value,
-        email: document.getElementById('email').value,
-        description: document.getElementById('description').value,
-        delivery_date: document.getElementById('deliveryDate').value,
+        first_name: fName,
+        last_name: lName,
+        phone: phone,
+        email: document.getElementById('email').value || null,
+        description: desc,
+        delivery_date: dDate,
         location_type: document.getElementById('locationType').value,
-        address: document.getElementById('address').value,
+        address: document.getElementById('address').value || null,
         total_price: parseFloat(document.getElementById('totalPrice').value) || 0,
         deposit: parseFloat(document.getElementById('deposit').value) || 0
     };
 
+    console.log("Προσπάθεια αποστολής:", orderData);
+
     try {
-        // Αποστολή στο Supabase
         const { data, error } = await _supabase
             .from('orders')
-            .insert([orderData]);
+            .insert([orderData])
+            .select(); // Ζητάμε πίσω τα δεδομένα για επιβεβαίωση
 
-        if (error) {
-            throw error; // Αν υπάρχει σφάλμα, πήγαινε στο catch
-        }
+        if (error) throw error;
 
-        console.log("Επιτυχία:", data);
-        alert("Η παραγγελία αποθηκεύτηκε στη βάση δεδομένων!");
+        console.log("Η εγγραφή έγινε επιτυχώς:", data);
+        alert("Η παραγγελία καταχωρήθηκε στη βάση!");
         
-        // Μόνο αν πετύχει η αποθήκευση, προχωράμε στην εκτύπωση
+        // Μόνο αν πετύχει η βάση, προχωράμε στην εκτύπωση
         preparePrint();
 
     } catch (err) {
-        console.error("Σφάλμα Supabase:", err.message);
-        alert("Σφάλμα κατά την αποθήκευση: " + err.message);
+        console.error("Σφάλμα κατά την αποθήκευση:", err);
+        alert("Αποτυχία σύνδεσης με τη βάση: " + err.message);
     }
 }
-
-// 3. Η συνάρτηση εκτύπωσης (όπως την είχαμε)
-function preparePrint() {
-    const data = {
-        "Πελάτης": document.getElementById('firstName').value + " " + document.getElementById('lastName').value,
-        "Τηλέφωνο": document.getElementById('phone').value,
-        "Περιγραφή": document.getElementById('description').value,
-        "Παράδοση": document.getElementById('deliveryDate').value,
-        "Σύνολο": document.getElementById('totalPrice').value + " €",
-        "Προκαταβολή": document.getElementById('deposit').value + " €"
-    };
-
-    let htmlContent = "";
-    for (let key in data) {
-        htmlContent += `<p><strong>${key}:</strong> ${data[key]}</p>`;
-    }
-    document.getElementById('printContent').innerHTML = htmlContent;
-    
-    // Preview εικόνων αν υπάρχουν
-    const preview = document.getElementById('imagePreview');
-    document.getElementById('printImages').innerHTML = preview.innerHTML;
-
-    window.print();
-}
-
-// Image Preview logic
-document.getElementById('photoInput').addEventListener('change', function() {
-    const preview = document.getElementById('imagePreview');
-    preview.innerHTML = "";
-    Array.from(this.files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            preview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-    });
-});
