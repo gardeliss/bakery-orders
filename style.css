@@ -1,20 +1,128 @@
-/* ... τα προηγούμενα στυλ παραμένουν ... */
-
-.nav-link-btn { 
-    background: none; border: 1px solid var(--petrol); color: var(--petrol); 
-    padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; width: auto; font-weight: bold;
+:root {
+    --petrol: #2a5a5a;
+    --petrol-hover: #1e4242;
+    --bg-color: #f4f7f6;
 }
 
-.btn-delete { background: #dc3545 !important; } /* Κόκκινο για διαγραφή */
-.btn-delete:hover { background: #a71d2a !important; }
+body { 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    background-color: var(--bg-color); 
+    padding: 10px; 
+    color: #333; 
+    margin: 0; 
+}
 
-/* Modal Στυλ */
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-.modal-content { background: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 900px; border-radius: 10px; position: relative; }
+.container { 
+    max-width: 700px; 
+    margin: 20px auto; 
+    background: white; 
+    padding: 25px; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+}
+
+.banner { text-align: center; margin-bottom: 20px; }
+.banner img { max-width: 100%; border-radius: 8px; height: auto; }
+
+.nav { margin-bottom: 20px; text-align: right; display: flex; justify-content: flex-end; gap: 10px; }
+
+/* Στυλ για τα Links/Buttons στο Nav */
+.nav-link, .nav-link-btn { 
+    text-decoration: none; 
+    color: var(--petrol); 
+    font-weight: bold; 
+    border: 1px solid var(--petrol); 
+    padding: 8px 15px; 
+    border-radius: 20px; 
+    transition: 0.3s; 
+    background: white;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.nav-link:hover, .nav-link-btn:hover { 
+    background: var(--petrol); 
+    color: white; 
+}
+
+h2 { 
+    color: var(--petrol); 
+    border-left: 5px solid var(--petrol); 
+    padding-left: 15px; 
+    margin-bottom: 25px; 
+    text-align: left;
+}
+
+.row { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 15px; 
+    margin-bottom: 15px; 
+}
+
+/* Για να είναι τα πεδία δίπλα-δίπλα */
+.row input, .row .input-group { 
+    flex: 1; 
+    min-width: 200px; 
+}
+
+.input-group { display: flex; flex-direction: column; width: 100%; }
+.input-group label { font-size: 14px; margin-bottom: 5px; color: #666; font-weight: bold; text-align: left; }
+
+input, textarea, select { 
+    width: 100%; 
+    padding: 12px; 
+    border: 1px solid #ccc; 
+    border-radius: 6px; 
+    font-size: 16px; 
+    box-sizing: border-box; 
+}
+
+input:focus, textarea:focus, select:focus { 
+    border-color: var(--petrol); 
+    outline: none; 
+    box-shadow: 0 0 5px rgba(42, 90, 90, 0.2); 
+}
+
+button#submitBtn { 
+    width: 100%; 
+    padding: 16px; 
+    background: var(--petrol); 
+    color: white; 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-size: 18px; 
+    font-weight: bold; 
+    transition: 0.3s; 
+}
+
+button#submitBtn:hover { background: var(--petrol-hover); }
+
+/* Κάρτες στην αναζήτηση */
+.order-card { 
+    background: #fff; 
+    border: 1px solid #eee; 
+    padding: 15px; 
+    margin-top: 15px; 
+    border-radius: 10px; 
+    border-left: 5px solid var(--petrol); 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+.btn-small { width: auto; padding: 8px 12px; font-size: 18px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: #f8f9fa; margin-left: 5px; }
+.btn-delete { color: #dc3545; }
+
+/* Modal για Ημερολόγιο */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+.modal-content { background: white; margin: 2% auto; padding: 20px; width: 90%; max-width: 900px; border-radius: 12px; position: relative; }
 .close { position: absolute; right: 20px; top: 10px; font-size: 28px; cursor: pointer; }
 
-/* FullCalendar Customization */
-#calendar { max-height: 70vh; }
-.fc-event { cursor: pointer; padding: 2px; font-size: 0.85em; }
-.fc-toolbar-title { font-size: 1.2em !important; color: var(--petrol); }
-.fc-button-primary { background-color: var(--petrol) !important; border-color: var(--petrol) !important; }
+/* Εκτύπωση */
+.print-only { display: none; }
+@media print {
+    .no-print { display: none; }
+    .print-only { display: block; }
+}
