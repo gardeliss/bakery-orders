@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Διαχείριση - Ζαχαροπλαστείο Ζάχαρη</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container no-print">
@@ -14,18 +15,26 @@
 
         <div class="nav">
             <a href="index.html" class="nav-link">➕ Νέα Καταχώρηση</a>
+            <button onclick="openCalendar()" class="nav-link-btn">📅 Ημερολόγιο Μήνα</button>
         </div>
 
         <h2>🔍 Αναζήτηση Παραγγελιών</h2>
         <input type="text" id="searchInput" onkeyup="filterOrders()" placeholder="Αναζήτηση με Όνομα, Επώνυμο ή Τηλέφωνο...">
         
-        <div id="ordersList">
-            </div>
+        <div id="ordersList"></div>
+    </div>
+
+    <div id="calendarModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCalendar()">&times;</span>
+            <div id="calendar"></div>
+        </div>
     </div>
 
     <div id="printArea" class="print-only"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <script src="script.js"></script>
     <script>
         window.onload = fetchOrders;

@@ -1,42 +1,20 @@
-:root {
-    --petrol: #2a5a5a;
-    --petrol-hover: #1e4242;
-    --bg-color: #f4f7f6;
+/* ... τα προηγούμενα στυλ παραμένουν ... */
+
+.nav-link-btn { 
+    background: none; border: 1px solid var(--petrol); color: var(--petrol); 
+    padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; width: auto; font-weight: bold;
 }
 
-body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg-color); padding: 10px; color: #333; margin: 0; }
-.container { max-width: 700px; margin: 20px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.btn-delete { background: #dc3545 !important; } /* Κόκκινο για διαγραφή */
+.btn-delete:hover { background: #a71d2a !important; }
 
-.banner { text-align: center; margin-bottom: 20px; }
-.banner img { max-width: 100%; border-radius: 8px; }
+/* Modal Στυλ */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 900px; border-radius: 10px; position: relative; }
+.close { position: absolute; right: 20px; top: 10px; font-size: 28px; cursor: pointer; }
 
-.nav { margin-bottom: 20px; text-align: right; }
-.nav-link { text-decoration: none; color: var(--petrol); font-weight: bold; border: 1px solid var(--petrol); padding: 5px 15px; border-radius: 20px; transition: 0.3s; }
-.nav-link:hover { background: var(--petrol); color: white; }
-
-h2 { color: var(--petrol); border-left: 5px solid var(--petrol); padding-left: 15px; margin-bottom: 25px; }
-
-.row { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
-.input-group { flex: 1; min-width: 100%; display: flex; flex-direction: column; }
-.input-group label { font-size: 14px; margin-bottom: 5px; color: #666; font-weight: bold; }
-
-input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
-input:focus { border-color: var(--petrol); outline: none; box-shadow: 0 0 5px rgba(42, 90, 90, 0.2); }
-
-button { width: 100%; padding: 16px; background: var(--petrol); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.3s; }
-button:hover { background: var(--petrol-hover); }
-
-/* Στυλ Κάρτας Αναζήτησης */
-.order-card { background: #fff; border: 1px solid #eee; padding: 15px; margin-top: 15px; border-radius: 10px; border-left: 5px solid var(--petrol); display: flex; justify-content: space-between; align-items: center; }
-.card-info { flex: 1; }
-.card-actions { display: flex; gap: 10px; }
-.btn-small { width: auto; padding: 8px 12px; font-size: 13px; margin: 0; }
-.btn-edit { background: #6c757d; }
-
-/* Εκτύπωση */
-.print-only { display: none; }
-@media print {
-    .no-print { display: none; }
-    .print-only { display: block; background: white; }
-    .print-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-}
+/* FullCalendar Customization */
+#calendar { max-height: 70vh; }
+.fc-event { cursor: pointer; padding: 2px; font-size: 0.85em; }
+.fc-toolbar-title { font-size: 1.2em !important; color: var(--petrol); }
+.fc-button-primary { background-color: var(--petrol) !important; border-color: var(--petrol) !important; }
