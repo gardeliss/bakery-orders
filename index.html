@@ -2,16 +2,24 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <title>Νέα Παραγγελία - Ζαχαροπλαστείο</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Καταχώρηση - Ζαχαροπλαστείο Ζάχαρη</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <div class="nav">
-            <a href="admin.html" class="nav-link">🔍 Αναζήτηση Παραγγελιών</a>
+        <div class="banner">
+            <img src="banner.png" alt="Ζαχαροπλαστείο Ζάχαρη">
         </div>
-        <h2>🍰 Νέα Παραγγελία</h2>
+
+        <div class="nav no-print">
+            <a href="admin.html" class="nav-link">🔍 Αναζήτηση & Διαχείριση</a>
+        </div>
+
+        <h2 id="formTitle">🍰 Νέα Παραγγελία</h2>
         <form id="orderForm">
+            <input type="hidden" id="orderId">
+            
             <div class="row">
                 <input type="text" id="firstName" placeholder="Όνομα" required>
                 <input type="text" id="lastName" placeholder="Επώνυμο" required>
@@ -20,25 +28,48 @@
                 <input type="tel" id="phone" placeholder="Τηλέφωνο" required>
                 <input type="email" id="email" placeholder="Email">
             </div>
+            
             <textarea id="description" placeholder="Περιγραφή Παραγγελίας..." rows="4" required></textarea>
+            
             <div class="row">
-                <label>Ημ/νία Παράδοσης: <input type="date" id="deliveryDate" required></label>
-                <select id="locationType">
-                    <option value="Σπίτι">Σπίτι</option>
-                    <option value="Παιδότοπος">Παιδότοπος</option>
-                    <option value="Καφέ">Καφέ</option>
-                </select>
+                <div class="input-group">
+                    <label>Ημερομηνία Παράδοσης</label>
+                    <input type="date" id="deliveryDate" class="modern-date" required>
+                </div>
             </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Τοποθεσία Παράδοσης</label>
+                    <select id="locationType">
+                        <option value="Σπίτι">Σπίτι</option>
+                        <option value="Παιδότοπος">Παιδότοπος</option>
+                        <option value="Καφέ">Καφέ</option>
+                    </select>
+                </div>
+            </div>
+
             <input type="text" id="address" placeholder="Διεύθυνση Παράδοσης">
+            
             <div class="row">
                 <input type="number" id="totalPrice" placeholder="Συνολική Τιμή (€)" step="0.01">
                 <input type="number" id="deposit" placeholder="Προκαταβολή (€)" step="0.01">
             </div>
-            <button type="button" id="submitBtn" onclick="saveOrder()">✅ Αποθήκευση Παραγγελίας</button>
+            
+            <button type="button" id="submitBtn" onclick="handleSave()">✅ Αποθήκευση Παραγγελίας</button>
+            <button type="button" id="cancelBtn" style="display:none; background:#6c757d; margin-top:10px;" onclick="resetForm()">Ακύρωση Επεξεργασίας</button>
         </form>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
+    <script>
+        // Έλεγχος αν ήρθαμε από το "Edit"
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const editId = params.get('edit');
+            if (editId) loadOrderToEdit(editId);
+        };
+    </script>
 </body>
 </html>
