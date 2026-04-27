@@ -112,47 +112,97 @@ function formatOne(o) {
     `;
     renderAndPrint(html);
 }
-
 function getWeeklyData() {
     const today = new Date().toISOString().split('T')[0];
-    const startStr = prompt("Ημερομηνία έναρξης (YYYY-MM-DD):", today);
+    const startStr = prompt("Εισάγετε ημερομηνία έναρξης (YYYY-MM-DD):", today);
     if (!startStr) return null;
+    
     const start = new Date(startStr);
-    const end = new Date(start); end.setDate(start.getDate() + 7);
+    const end = new Date(start); 
+    end.setDate(start.getDate() + 7);
+    
     const filtered = allOrders.filter(o => {
         const d = new Date(o.delivery_date);
         return d >= start && d < end;
     }).sort((a,b) => new Date(a.delivery_date) - new Date(b.delivery_date));
+    
     return { filtered, startStr };
 }
 
+
 function printWeeklyList() {
     const data = getWeeklyData();
-    if (!data) return;
-    let content = `<h2 style="text-align:center;">📋 Λίστα Εβδομάδας (από ${data.startStr})</h2>`;
+    if (!data || data.filtered.length === 0) {
+        alert("Δεν βρέθηκαν παραγγελίες για αυτή την περίοδο.");
+        return;
+    }
+
+    let content = `<h2 style="text-align:center; color:#2a5a5a; border-bottom:2px solid #2a5a5a; padding-bottom:10px;">📋 Εβδομαδιαίο Πλάνο Παραγγελιών</h2>`;
+    
+    // Ομαδοποίηση ανά ημερομηνία
+    const grouped = {};
     data.filtered.forEach(o => {
-        content += `<div style="border-bottom:1px solid #eee; padding:10px 0;">
-            <strong>${o.delivery_date.split('-').reverse().join('-')}</strong>: ${o.last_name} - ${o.description} (📞 ${o.phone})
-        </div>`;
+        if (!grouped[o.delivery_date]) grouped[o.delivery_date] = [];
+        grouped[o.delivery_date].push(o);
     });
+
+    // Εμφάνιση ομαδοποιημένων
+    Object.keys(grouped).forEach(date => {
+        const dObj = new Date(date);
+        const dayName = dObj.toLocaleDateString('el-GR', { weekday: 'long' });
+        const formattedDate = date.split('-').reverse().join('-');
+
+        content += `
+            <div style="margin-top:20px; border:1px solid #eee; border-radius:8px; overflow:hidden;">
+                <h3 style="background:#f4f7f6; padding:10px; margin:0; border-bottom:1px solid #eee; color:#2a5a5a;">
+                    📅 ${dayName.toUpperCase()} - ${formattedDate}
+                </h3>
+                <div style="padding:10px;">`;
+        
+        grouped[date].forEach(o => {
+            content += `
+                <p style="margin:8px 0; padding-bottom:8px; border-bottom:1px dashed #eee; line-height:1.4;">
+                    <span style="font-size:18px;">•</span> 
+                    <strong>${o.last_name} ${o.first_name}</strong>: 
+                    ${o.description} 
+                    <span style="float:right; font-style:italic;">📞 ${o.phone}</span>
+                </p>`;
+        });
+
+        content += `</div></div>`;
+    });
+
     renderAndPrint(content);
 }
 
 function printWeeklyTable() {
     const data = getWeeklyData();
-    if (!data) return;
-    let content = `<h2 style="text-align:center;">📊 Πίνακας Εβδομάδας</h2>
-    <table border="1" style="width:100%; border-collapse:collapse; font-size:12px;">
-        <thead><tr style="background:#f2f2f2;"><th>Ημερομηνία</th><th>Πελάτης</th><th>Περιγραφή</th><th>Τηλέφωνο</th></tr></thead>
+    if (!data || data.filtered.length === 0) return;
+
+    let content = `<h2 style="text-align:center; color:#2a5a5a;">📊 Πίνακας Εβδομάδας</h2>
+    <table border="1" style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+        <thead>
+            <tr style="background:#2a5a5a; color:white;">
+                <th style="padding:10px;">Ημερομηνία / Ημέρα</th>
+                <th style="padding:10px;">Πελάτης</th>
+                <th style="padding:10px;">Περιγραφή</th>
+                <th style="padding:10px;">Τηλέφωνο</th>
+            </tr>
+        </thead>
         <tbody>`;
+
     data.filtered.forEach(o => {
-        content += `<tr>
-            <td style="padding:5px;">${o.delivery_date.split('-').reverse().join('-')}</td>
-            <td style="padding:5px;">${o.last_name}</td>
-            <td style="padding:5px;">${o.description}</td>
-            <td style="padding:5px;">${o.phone}</td>
-        </tr>`;
+        const dObj = new Date(o.delivery_date);
+        const dayName = dObj.toLocaleDateString('el-GR', { weekday: 'short' });
+        content += `
+            <tr>
+                <td style="padding:8px;">${dayName.toUpperCase()} ${o.delivery_date.split('-').reverse().join('-')}</td>
+                <td style="padding:8px;"><strong>${o.last_name}</strong></td>
+                <td style="padding:8px;">${o.description}</td>
+                <td style="padding:8px;">${o.phone}</td>
+            </tr>`;
     });
+
     content += `</tbody></table>`;
     renderAndPrint(content);
 }
