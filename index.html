@@ -3,86 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Καταχώρηση - Ζαχαροπλαστείο Ζάχαρη</title>
+    <title>Καταχώρηση - Ζάχαρη</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container no-print">
-        <div class="banner">
-            <img src="banner.png" alt="Ζαχαροπλαστείο Ζάχαρη">
-        </div>
-
+        <div class="banner"><img src="banner.png"></div>
         <div class="nav">
             <a href="admin.html" class="nav-link">🔍 Αναζήτηση</a>
-            <a href="calendar.html" class="nav-link">📅 Ημερολόγιο & Εβδομάδα</a>
+            <a href="calendar.html" class="nav-link">📅 Ημερολόγιο</a>
         </div>
-
-        <h2 id="formTitle">🍰 Νέα Παραγγελία</h2>
         <form id="orderForm">
             <input type="hidden" id="orderId">
-            
             <div class="row">
-                <input type="text" id="firstName" placeholder="Όνομα" required>
-                <input type="text" id="lastName" placeholder="Επώνυμο" required>
+                <input type="text" id="firstName" placeholder="Όνομα">
+                <input type="text" id="lastName" placeholder="Επώνυμο">
             </div>
-            
+            <input type="tel" id="phone" placeholder="Τηλέφωνο">
+            <textarea id="description" placeholder="Περιγραφή..." rows="5"></textarea>
             <div class="row">
-                <input type="tel" id="phone" placeholder="Τηλέφωνο" required>
-                <input type="email" id="email" placeholder="Email">
+                <input type="date" id="deliveryDate">
+                <select id="locationType">
+                    <option value="Σπίτι">Σπίτι</option>
+                    <option value="Παιδότοπος">Παιδότοπος</option>
+                </select>
             </div>
-            
-            <textarea id="description" placeholder="Περιγραφή Παραγγελίας..." rows="5" required></textarea>
-            
+            <input type="text" id="address" placeholder="Διεύθυνση">
             <div class="row">
-                <div class="input-group" style="flex:1">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">Ημερομηνία Παράδοσης</label>
-                    <input type="date" id="deliveryDate" required>
-                </div>
+                <input type="number" id="totalPrice" placeholder="Σύνολο (€)">
+                <input type="number" id="deposit" placeholder="Προκαταβολή (€)">
             </div>
-
-            <div class="row">
-                <div class="input-group" style="flex:1">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">Τοποθεσία Παράδοσης</label>
-                    <select id="locationType">
-                        <option value="Σπίτι">Σπίτι</option>
-                        <option value="Παιδότοπος">Παιδότοπος</option>
-                        <option value="Καφέ">Καφέ</option>
-                    </select>
-                </div>
-            </div>
-
-            <input type="text" id="address" placeholder="Διεύθυνση Παράδοσης (αν υπάρχει)">
-            
-            <div class="row">
-                <div class="input-group" style="flex:1">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">Συνολική Τιμή (€)</label>
-                    <input type="number" id="totalPrice" placeholder="0.00" step="0.01">
-                </div>
-                <div class="input-group" style="flex:1">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">Προκαταβολή (€)</label>
-                    <input type="number" id="deposit" placeholder="0.00" step="0.01">
-                </div>
-            </div>
-            
-            <div class="form-actions">
-                <button type="button" id="submitBtn" onclick="handleSave()">✅ Αποθήκευση Παραγγελίας</button>
-                <button type="button" id="formPrintBtn" style="display:none;" onclick="printFromForm()">🖨️ Εκτύπωση Παραγγελίας</button>
+            <div class="form-actions" style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                <button type="button" id="submitBtn" onclick="handleSave()" style="background:#2a5a5a; color:white; padding:12px; border:none; border-radius:8px;">✅ Αποθήκευση</button>
+                <button type="button" id="formPrintBtn" onclick="printFromForm()" style="display:none; background:#6c757d; color:white; padding:12px; border:none; border-radius:8px;">🖨️ Εκτύπωση</button>
             </div>
         </form>
     </div>
-
     <div id="printArea" class="print-only"></div>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
     <script>
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const editId = params.get('edit');
-            if (editId) {
-                // Αν είμαστε σε mode επεξεργασίας, φορτώνουμε τα δεδομένα
-                loadOrderToEdit(editId);
-            }
+            if (editId) loadOrderToEdit(editId);
         };
     </script>
 </body>
