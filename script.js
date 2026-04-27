@@ -5,6 +5,7 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allOrders = [];
 
+// 1. Λήψη & Εμφάνιση
 async function fetchOrders() {
     try {
         const { data, error } = await _supabase.from('orders').select('*').order('delivery_date', { ascending: true });
@@ -23,12 +24,23 @@ function displayOrders(orders) {
                 <strong>${o.last_name} ${o.first_name}</strong><br>
                 📅 ${o.delivery_date.split('-').reverse().join('-')} | 📞 ${o.phone}
             </div>
-            <div class="card-actions">
-                <button class="btn-small" onclick="window.location.href='index.html?edit=${o.id}'">📝</button>
-                <button class="btn-small" onclick="printOneOrder('${o.id}')">🖨️</button>
+            <div class="card-actions" style="display:flex; gap:8px;">
+                <button class="btn-small" title="Επεξεργασία" onclick="window.location.href='index.html?edit=${o.id}'">📝</button>
+                <button class="btn-small" title="Εκτύπωση" onclick="printOneOrder('${o.id}')">🖨️</button>
+                <button class="btn-small" title="Διαγραφή" style="color:red;" onclick="deleteOrder('${o.id}')">🗑️</button>
             </div>
         </div>
     `).join('');
+}
+
+async function deleteOrder(id) {
+    if (!confirm("Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την παραγγελία;")) return;
+    const { error } = await _supabase.from('orders').delete().eq('id', id);
+    if (error) alert("Σφάλμα κατά τη διαγραφή: " + error.message);
+    else {
+        alert("Η παραγγελία διαγράφηκε.");
+        fetchOrders(); // Ανανέωση λίστας
+    }
 }
 
 function filterOrders() {
@@ -41,6 +53,7 @@ function filterOrders() {
     displayOrders(filtered);
 }
 
+// 2. Αποθήκευση
 async function handleSave() {
     const btn = document.getElementById('submitBtn');
     const orderId = document.getElementById('orderId').value;
@@ -64,6 +77,7 @@ async function handleSave() {
     btn.disabled = false;
 }
 
+// 3. Εκτυπώσεις
 function renderAndPrint(htmlContent) {
     const printArea = document.getElementById('printArea');
     printArea.innerHTML = `<div style="text-align:center; margin-bottom:20px;"><img src="banner.png" style="max-width:250px;"></div>` + htmlContent;
@@ -85,59 +99,70 @@ function printOneOrder(id) {
 
 function formatOne(o) {
     const html = `
-        <h2 style="text-align:center; border-bottom:2px solid #2a5a5a; padding-bottom:10px;">ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ</h2>
-        <p style="font-size:18px;"><strong>Πελάτης:</strong> ${o.last_name} ${o.first_name} | 📞 ${o.phone}</p>
-        <p><strong>Ημερομηνία Παράδοσης:</strong> ${o.delivery_date.split('-').reverse().join('-')} (${o.location_type})</p>
-        <p><strong>Διεύθυνση:</strong> ${o.address || '-'}</p>
-        <div style="border:1px solid #ccc; padding:15px; margin:20px 0; min-height:150px;">
+        <h2 style="text-align:center; border-bottom:2px solid #2a5a5a;">ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ</h2>
+        <p><strong>Πελάτης:</strong> ${o.last_name} ${o.first_name} | 📞 ${o.phone}</p>
+        <p><strong>Ημερομηνία:</strong> ${o.delivery_date.split('-').reverse().join('-')} (${o.location_type})</p>
+        <div style="border:1px solid #ccc; padding:15px; margin:20px 0; min-height:100px;">
             <strong>ΠΕΡΙΓΡΑΦΗ:</strong><br>${o.description.replace(/\n/g, '<br>')}
         </div>
-        <div style="text-align:right; font-size:20px;">
-            <p>Σύνολο: ${o.total_price.toFixed(2)}€</p>
-            <p>Προκαταβολή: ${o.deposit.toFixed(2)}€</p>
-            <h2 style="color:#2a5a5a">Υπόλοιπο: ${(o.total_price - o.deposit).toFixed(2)} €</h2>
+        <div style="text-align:right;">
+            <p>Σύνολο: ${o.total_price.toFixed(2)}€ | Προκαταβολή: ${o.deposit.toFixed(2)}€</p>
+            <h2 style="color:#2a5a5a">Υπόλοιπο: ${(o.total_price - o.deposit).toFixed(2)}€</h2>
         </div>
     `;
     renderAndPrint(html);
 }
 
-function printWeeklyList() {
-    const startStr = prompt("Εισάγετε ημερομηνία έναρξης (π.χ. 2024-05-20):");
-    if (!startStr) return;
+function getWeeklyData() {
+    const today = new Date().toISOString().split('T')[0];
+    const startStr = prompt("Ημερομηνία έναρξης (YYYY-MM-DD):", today);
+    if (!startStr) return null;
     const start = new Date(startStr);
     const end = new Date(start); end.setDate(start.getDate() + 7);
-    
     const filtered = allOrders.filter(o => {
         const d = new Date(o.delivery_date);
         return d >= start && d < end;
     }).sort((a,b) => new Date(a.delivery_date) - new Date(b.delivery_date));
+    return { filtered, startStr };
+}
 
-    let content = `<h2 style="text-align:center; color:#2a5a5a; border-bottom:2px solid #2a5a5a;">📋 Εβδομαδιαίο Πλάνο Παραγγελιών</h2>`;
-    const days = [...new Set(filtered.map(o => o.delivery_date))];
-    
-    days.forEach(day => {
-        const dObj = new Date(day);
-        const dayName = dObj.toLocaleDateString('el-GR', { weekday: 'long' });
-        content += `<div style="margin-top:20px; border:1px solid #eee; padding:10px; border-radius:8px;">
-            <h3 style="background:#f4f7f6; padding:8px; margin:0;">📅 ${dayName.toUpperCase()} - ${day.split('-').reverse().join('-')}</h3>`;
-        filtered.filter(o => o.delivery_date === day).forEach(o => {
-            content += `<p style="padding:5px 0; border-bottom:1px dashed #eee;"><strong>• ${o.last_name} ${o.first_name}</strong>: ${o.description} <span style="float:right">📞 ${o.phone}</span></p>`;
-        });
-        content += `</div>`;
+function printWeeklyList() {
+    const data = getWeeklyData();
+    if (!data) return;
+    let content = `<h2 style="text-align:center;">📋 Λίστα Εβδομάδας (από ${data.startStr})</h2>`;
+    data.filtered.forEach(o => {
+        content += `<div style="border-bottom:1px solid #eee; padding:10px 0;">
+            <strong>${o.delivery_date.split('-').reverse().join('-')}</strong>: ${o.last_name} - ${o.description} (📞 ${o.phone})
+        </div>`;
     });
     renderAndPrint(content);
 }
 
 function printWeeklyTable() {
-    alert("Η λειτουργία Πίνακα θα προστεθεί σύντομα. Χρησιμοποιήστε τη Λίστα Εβδομάδας.");
+    const data = getWeeklyData();
+    if (!data) return;
+    let content = `<h2 style="text-align:center;">📊 Πίνακας Εβδομάδας</h2>
+    <table border="1" style="width:100%; border-collapse:collapse; font-size:12px;">
+        <thead><tr style="background:#f2f2f2;"><th>Ημερομηνία</th><th>Πελάτης</th><th>Περιγραφή</th><th>Τηλέφωνο</th></tr></thead>
+        <tbody>`;
+    data.filtered.forEach(o => {
+        content += `<tr>
+            <td style="padding:5px;">${o.delivery_date.split('-').reverse().join('-')}</td>
+            <td style="padding:5px;">${o.last_name}</td>
+            <td style="padding:5px;">${o.description}</td>
+            <td style="padding:5px;">${o.phone}</td>
+        </tr>`;
+    });
+    content += `</tbody></table>`;
+    renderAndPrint(content);
 }
 
+// 4. Ημερολόγιο & Edit
 function initAdvancedCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
     const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'el',
+        initialView: 'dayGridMonth', locale: 'el',
         events: allOrders.map(o => ({ title: `${o.last_name} (${o.location_type})`, start: o.delivery_date, extendedProps: { id: o.id } })),
         eventClick: (info) => { window.location.href = `index.html?edit=${info.event.extendedProps.id}`; }
     });

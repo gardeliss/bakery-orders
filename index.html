@@ -11,66 +11,28 @@
         <div class="banner"><img src="banner.png"></div>
         <div class="nav">
             <a href="admin.html" class="nav-link">🔍 Αναζήτηση</a>
-            <a href="calendar.html" class="nav-link">📅 Ημερολόγιο & Εβδομάδα</a>
+            <a href="calendar.html" class="nav-link">📅 Ημερολόγιο</a>
         </div>
-
         <h2 id="formTitle">🍰 Νέα Παραγγελία</h2>
         <form id="orderForm">
             <input type="hidden" id="orderId">
-            
             <div class="row">
-                <div class="input-group">
-                    <label>Όνομα</label>
-                    <input type="text" id="firstName" required>
-                </div>
-                <div class="input-group">
-                    <label>Επώνυμο</label>
-                    <input type="text" id="lastName" required>
-                </div>
+                <div class="input-group"><label>Όνομα</label><input type="text" id="firstName" required></div>
+                <div class="input-group"><label>Επώνυμο</label><input type="text" id="lastName" required></div>
             </div>
-            
             <div class="row">
-                <div class="input-group">
-                    <label>Τηλέφωνο</label>
-                    <input type="tel" id="phone" required>
-                </div>
-                <div class="input-group">
-                    <label>Ημερομηνία Παράδοσης</label>
-                    <input type="date" id="deliveryDate" required>
-                </div>
+                <div class="input-group"><label>Τηλέφωνο</label><input type="tel" id="phone" required></div>
+                <div class="input-group"><label>Ημερομηνία Παράδοσης</label><input type="date" id="deliveryDate" required></div>
             </div>
-
-            <div class="input-group" style="margin-bottom:15px;">
-                <label>Περιγραφή Παραγγελίας</label>
-                <textarea id="description" rows="5" required></textarea>
-            </div>
-
+            <div class="input-group" style="margin-bottom:15px;"><label>Περιγραφή</label><textarea id="description" rows="5" required></textarea></div>
             <div class="row">
-                <div class="input-group">
-                    <label>Τοποθεσία</label>
-                    <select id="locationType">
-                        <option value="Σπίτι">Σπίτι</option>
-                        <option value="Παιδότοπος">Παιδότοπος</option>
-                        <option value="Καφέ">Καφέ</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Διεύθυνση</label>
-                    <input type="text" id="address">
-                </div>
+                <div class="input-group"><label>Τοποθεσία</label><select id="locationType"><option value="Σπίτι">Σπίτι</option><option value="Παιδότοπος">Παιδότοπος</option></select></div>
+                <div class="input-group"><label>Διεύθυνση</label><input type="text" id="address"></div>
             </div>
-
             <div class="row">
-                <div class="input-group">
-                    <label>Συνολική Τιμή (€)</label>
-                    <input type="number" id="totalPrice" step="0.01">
-                </div>
-                <div class="input-group">
-                    <label>Προκαταβολή (€)</label>
-                    <input type="number" id="deposit" step="0.01">
-                </div>
+                <div class="input-group"><label>Σύνολο (€)</label><input type="number" id="totalPrice" step="0.01"></div>
+                <div class="input-group"><label>Προκαταβολή (€)</label><input type="number" id="deposit" step="0.01"></div>
             </div>
-
             <div class="form-actions">
                 <button type="button" id="submitBtn" onclick="handleSave()">✅ Αποθήκευση</button>
                 <button type="button" id="formPrintBtn" style="display:none;" onclick="printFromForm()">🖨️ Εκτύπωση Παραγγελίας</button>
@@ -80,12 +42,6 @@
     <div id="printArea" class="print-only"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
-    <script>
-        window.onload = () => {
-            const params = new URLSearchParams(window.location.search);
-            const editId = params.get('edit');
-            if (editId) loadOrderToEdit(editId);
-        };
-    </script>
+    <script>window.onload = () => { const params = new URLSearchParams(window.location.search); if (params.get('edit')) loadOrderToEdit(params.get('edit')); };</script>
 </body>
 </html>
