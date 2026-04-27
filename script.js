@@ -5,6 +5,7 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allOrders = [];
 
+// Λήψη δεδομένων
 async function fetchOrders() {
     try {
         const { data, error } = await _supabase.from('orders').select('*').order('delivery_date', { ascending: true });
@@ -14,6 +15,7 @@ async function fetchOrders() {
     } catch (err) { console.error("Σφάλμα:", err.message); }
 }
 
+// Αποθήκευση
 async function handleSave() {
     const btn = document.getElementById('submitBtn');
     const orderId = document.getElementById('orderId').value;
@@ -28,86 +30,61 @@ async function handleSave() {
         total_price: parseFloat(document.getElementById('totalPrice').value) || 0,
         deposit: parseFloat(document.getElementById('deposit').value) || 0
     };
-
-    if (!orderData.first_name || !orderData.last_name || !orderData.delivery_date) {
-        alert("Συμπληρώστε τα υποχρεωτικά πεδία!");
-        return;
-    }
-
     btn.disabled = true;
     try {
         let res = orderId ? await _supabase.from('orders').update(orderData).eq('id', orderId) : await _supabase.from('orders').insert([orderData]);
-        if (res.error) throw res.error;
         alert("✅ Επιτυχής αποθήκευση!");
         window.location.href = 'admin.html';
-    } catch (err) { alert("Σφάλμα: " + err.message); }
+    } catch (err) { alert(err.message); }
     btn.disabled = false;
 }
 
-function displayOrders(orders) {
-    const list = document.getElementById('ordersList');
-    if (!list) return;
-    list.innerHTML = orders.map(o => `
-        <div class="order-card">
-            <div>
-                <strong>${o.last_name} ${o.first_name}</strong><br>
-                📅 ${o.delivery_date.split('-').reverse().join('-')} | 📞 ${o.phone}
-            </div>
-            <div class="card-actions">
-                <button class="btn-small" onclick="window.location.href='index.html?edit=${o.id}'">📝</button>
-                <button class="btn-small" onclick="printOneOrder('${o.id}')">🖨️</button>
-            </div>
-        </div>
-    `).join('');
-}
-
+// Εκτύπωση
 function renderAndPrint(htmlContent) {
     const printArea = document.getElementById('printArea');
-    if (!printArea) return;
-    printArea.innerHTML = `<div style="text-align:center; margin-bottom:20px;"><img src="banner.png" style="max-width:200px;"></div>` + htmlContent;
+    printArea.innerHTML = `<div style="text-align:center;"><img src="banner.png" style="max-width:200px;"></div>` + htmlContent;
     window.print();
-    setTimeout(() => { printArea.innerHTML = ""; }, 500);
 }
 
-// Αυτή η συνάρτηση εκτυπώνει την παραγγελία που είναι ανοιχτή στη φόρμα
 function printFromForm() {
-    const orderId = document.getElementById('orderId').value;
-    if (!orderId) {
-        alert("Παρακαλώ αποθηκεύστε πρώτα την παραγγελία!");
-        return;
-    }
-    printOneOrder(orderId);
+    const id = document.getElementById('orderId').value;
+    if (!id) return alert("Αποθηκεύστε πρώτα!");
+    printOneOrder(id);
 }
 
 function printOneOrder(id) {
-    // Αν δεν έχουμε φορτώσει όλες τις παραγγελίες, τις φέρνουμε από το Supabase
-    const o = allOrders.find(x => x.id == id);
-    if (!o) {
-        // Αν η σελίδα φορτώθηκε απευθείας (edit), κάνουμε ένα γρήγορο fetch
-        _supabase.from('orders').select('*').eq('id', id).single().then(({data}) => {
-            if (data) formatOrderForPrint(data);
-        });
-    } else {
-        formatOrderForPrint(o);
-    }
-}
-
-function formatOrderForPrint(o) {
+    const o = allOrders.find(x => x.id == id) || allOrders[0]; 
+    if (!o) return;
     const html = `
         <h2 style="text-align:center">ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ</h2>
         <p><strong>Πελάτης:</strong> ${o.last_name} ${o.first_name}</p>
-        <p><strong>Τηλέφωνο:</strong> ${o.phone}</p>
-        <p><strong>Παράδοση:</strong> ${o.delivery_date.split('-').reverse().join('-')} (${o.location_type})</p>
-        <p><strong>Διεύθυνση:</strong> ${o.address || '-'}</p>
+        <p><strong>Παράδοση:</strong> ${o.delivery_date}</p>
         <hr>
-        <p><strong>ΠΕΡΙΓΡΑΦΗ:</strong><br>${o.description.replace(/\n/g, '<br>')}</p>
+        <p>${o.description.replace(/\n/g, '<br>')}</p>
         <hr>
-        <h3>Σύνολο: ${o.total_price.toFixed(2)}€ | Προκαταβολή: ${o.deposit.toFixed(2)}€</h3>
-        <h2 style="color:#2a5a5a">Υπόλοιπο: ${(o.total_price - o.deposit).toFixed(2)} €</h2>
+        <h3>Υπόλοιπο: ${(o.total_price - o.deposit).toFixed(2)}€</h3>
     `;
     renderAndPrint(html);
 }
 
+// ΗΜΕΡΟΛΟΓΙΟ (Η συνάρτηση που έλειπε)
+function initAdvancedCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'el',
+        events: allOrders.map(o => ({
+            title: o.last_name,
+            start: o.delivery_date,
+            extendedProps: { id: o.id }
+        })),
+        eventClick: (info) => { window.location.href = `index.html?edit=${info.event.extendedProps.id}`; }
+    });
+    calendar.render();
+}
+
+// Load for Edit
 async function loadOrderToEdit(id) {
     const { data } = await _supabase.from('orders').select('*').eq('id', id).single();
     if (data) {
@@ -121,9 +98,6 @@ async function loadOrderToEdit(id) {
         document.getElementById('address').value = data.address;
         document.getElementById('totalPrice').value = data.total_price;
         document.getElementById('deposit').value = data.deposit;
-        
-        document.getElementById('formTitle').innerText = "📝 Επεξεργασία Παραγγελίας";
-        document.getElementById('submitBtn').innerText = "Ενημέρωση Παραγγελίας";
         document.getElementById('formPrintBtn').style.display = "block";
     }
 }

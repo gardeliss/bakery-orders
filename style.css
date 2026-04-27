@@ -1,5 +1,5 @@
 /* style.css */
-* { box-sizing: border-box; } /* Εμποδίζει τα πεδία να βγαίνουν έξω */
+* { box-sizing: border-box; }
 
 :root {
     --petrol: #2a5a5a;
@@ -27,123 +27,41 @@ body {
 /* Navigation */
 .nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
 .nav-link { 
-    text-decoration: none; 
-    color: var(--petrol); 
-    font-weight: bold; 
-    padding: 8px 16px; 
-    border: 2px solid var(--petrol); 
-    border-radius: 20px; 
-    font-size: 14px;
-    transition: 0.3s;
-}
-.nav-link:hover { background: var(--petrol); color: white; }
-
-/* Φόρμα & Rows */
-.row { 
-    display: flex; 
-    gap: 15px; 
-    margin-bottom: 15px; 
-    flex-wrap: wrap; 
+    text-decoration: none; color: var(--petrol); font-weight: bold; 
+    padding: 8px 16px; border: 2px solid var(--petrol); border-radius: 20px; font-size: 14px;
 }
 
-.input-group { 
-    flex: 1; 
-    min-width: 250px; 
-    display: flex; 
-    flex-direction: column; 
-}
+/* Rows & Inputs */
+.row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
 
-.input-group label { 
-    font-weight: bold; 
-    margin-bottom: 6px; 
-    color: var(--petrol); 
-    font-size: 14px;
-}
-
-input, textarea, select { 
-    width: 100%; 
-    padding: 12px; 
-    border: 1px solid #ccc; 
-    border-radius: 8px; 
-    font-size: 16px;
-    outline: none;
-}
-
-/* Οικονομικά Section */
-.finances-header { 
-    margin-top: 30px; 
-    padding-top: 15px; 
-    border-top: 2px solid #eee; 
-    color: var(--petrol); 
-    width: 100%;
-}
-
-/* Λίστα Αναζήτησης - Layout Fix */
-.order-card {
-    background: #fff;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    border: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-.card-actions { display: flex; gap: 10px; }
-
-.btn-small {
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    width: 45px;
-    height: 45px;
-    cursor: pointer;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Report Controls (Calendar Page) */
-.report-controls { 
-    display: flex; 
-    gap: 15px; 
-    margin-bottom: 20px; 
-}
-
+/* Report Buttons */
+.report-controls { display: flex; gap: 15px; margin-bottom: 20px; }
 .nav-link-btn {
-    flex: 1;
-    background: white;
-    color: var(--petrol);
-    border: 2px solid var(--petrol);
-    padding: 15px;
-    border-radius: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: 0.3s;
+    flex: 1; background: white; color: var(--petrol); border: 2px solid var(--petrol);
+    padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer;
 }
 
-.nav-link-btn:hover {
-    background: var(--petrol);
-    color: white;
+/* Order Cards */
+.order-card {
+    background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 12px;
+    border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
 }
 
-/* Κουμπιά Αποθήκευσης/Εκτύπωσης */
-#submitBtn { background: var(--petrol); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-size: 17px; font-weight: bold; margin-top: 10px;}
-#formPrintBtn { background: #6c757d; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-size: 17px; font-weight: bold; margin-top: 10px; }
-
-/* Printing */
+/* ΚΡΙΣΙΜΟ: ΔΙΟΡΘΩΣΗ ΕΚΤΥΠΩΣΗΣ */
 #printArea { display: none; }
+
 @media print {
+    /* Κρύβουμε ΤΑ ΠΑΝΤΑ */
+    body * { visibility: hidden; }
+    /* Εμφανίζουμε ΜΟΝΟ το printArea και τα περιεχόμενά του */
+    #printArea, #printArea * { visibility: visible; }
+    #printArea {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
     .no-print { display: none !important; }
-    #printArea { display: block !important; }
-    body { background: white; padding: 0; }
-    .container { box-shadow: none; max-width: 100%; }
 }
