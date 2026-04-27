@@ -1,5 +1,5 @@
 /* style.css */
-* { box-sizing: border-box; } /* Αυτό εμποδίζει τα πεδία να βγαίνουν έξω */
+* { box-sizing: border-box; } /* Εμποδίζει τα πεδία να βγαίνουν έξω */
 
 :root {
     --petrol: #2a5a5a;
@@ -106,6 +106,35 @@ input, textarea, select {
     justify-content: center;
 }
 
+/* Report Controls (Calendar Page) */
+.report-controls { 
+    display: flex; 
+    gap: 15px; 
+    margin-bottom: 20px; 
+}
+
+.nav-link-btn {
+    flex: 1;
+    background: white;
+    color: var(--petrol);
+    border: 2px solid var(--petrol);
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.3s;
+}
+
+.nav-link-btn:hover {
+    background: var(--petrol);
+    color: white;
+}
+
 /* Κουμπιά Αποθήκευσης/Εκτύπωσης */
 #submitBtn { background: var(--petrol); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-size: 17px; font-weight: bold; margin-top: 10px;}
 #formPrintBtn { background: #6c757d; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-size: 17px; font-weight: bold; margin-top: 10px; }
@@ -115,4 +144,6 @@ input, textarea, select {
 @media print {
     .no-print { display: none !important; }
     #printArea { display: block !important; }
+    body { background: white; padding: 0; }
+    .container { box-shadow: none; max-width: 100%; }
 }
