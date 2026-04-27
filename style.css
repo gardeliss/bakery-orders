@@ -1,67 +1,26 @@
 /* style.css */
 * { box-sizing: border-box; }
-
-:root {
-    --petrol: #2a5a5a;
-    --bg: #f4f7f6;
-}
-
-body { 
-    font-family: 'Segoe UI', Arial, sans-serif; 
-    background-color: var(--bg); 
-    margin: 0; 
-    padding: 15px; 
-}
-
-.container { 
-    max-width: 700px; 
-    margin: auto; 
-    background: white; 
-    padding: 25px; 
-    border-radius: 12px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-}
-
+:root { --petrol: #2a5a5a; --bg: #f4f7f6; }
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+.container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .banner img { width: 100%; border-radius: 8px; margin-bottom: 20px; }
+.nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+.nav-link { text-decoration: none; color: var(--petrol); font-weight: bold; padding: 8px 15px; border: 2px solid var(--petrol); border-radius: 20px; font-size: 13px; }
+.row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
 
-/* Navigation */
-.nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
-.nav-link { 
-    text-decoration: none; color: var(--petrol); font-weight: bold; 
-    padding: 8px 16px; border: 2px solid var(--petrol); border-radius: 20px; font-size: 14px;
-}
+/* Διόρθωση Κουμπιών στη Φόρμα */
+.form-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+#submitBtn { background: var(--petrol); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+#formPrintBtn { background: #6c757d; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
 
-/* Rows & Inputs */
-.row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
-input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+.order-card { background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+.btn-small { background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; width: 35px; height: 35px; cursor: pointer; }
 
-/* Report Buttons */
-.report-controls { display: flex; gap: 15px; margin-bottom: 20px; }
-.nav-link-btn {
-    flex: 1; background: white; color: var(--petrol); border: 2px solid var(--petrol);
-    padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer;
-}
-
-/* Order Cards */
-.order-card {
-    background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 12px;
-    border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
-}
-
-/* ΚΡΙΣΙΜΟ: ΔΙΟΡΘΩΣΗ ΕΚΤΥΠΩΣΗΣ */
 #printArea { display: none; }
-
 @media print {
-    /* Κρύβουμε ΤΑ ΠΑΝΤΑ */
     body * { visibility: hidden; }
-    /* Εμφανίζουμε ΜΟΝΟ το printArea και τα περιεχόμενά του */
     #printArea, #printArea * { visibility: visible; }
-    #printArea {
-        display: block !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
+    #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
     .no-print { display: none !important; }
 }
