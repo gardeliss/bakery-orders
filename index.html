@@ -13,7 +13,8 @@
         </div>
 
         <div class="nav no-print">
-            <a href="admin.html" class="nav-link">🔍 Αναζήτηση & Διαχείριση</a>
+            <a href="admin.html" class="nav-link">🔍 Αναζήτηση</a>
+            <a href="calendar.html" class="nav-link">📅 Ημερολόγιο & Εβδομάδα</a>
         </div>
 
         <h2 id="formTitle">🍰 Νέα Παραγγελία</h2>
@@ -34,7 +35,7 @@
             <div class="row">
                 <div class="input-group">
                     <label>Ημερομηνία Παράδοσης</label>
-                    <input type="date" id="deliveryDate" class="modern-date" required>
+                    <input type="date" id="deliveryDate" required>
                 </div>
             </div>
 
@@ -56,15 +57,18 @@
                 <input type="number" id="deposit" placeholder="Προκαταβολή (€)" step="0.01">
             </div>
             
-            <button type="button" id="submitBtn" onclick="handleSave()">✅ Αποθήκευση Παραγγελίας</button>
-            <button type="button" id="cancelBtn" style="display:none; background:#6c757d; margin-top:10px;" onclick="resetForm()">Ακύρωση Επεξεργασίας</button>
+            <div class="row no-print">
+                <button type="button" id="submitBtn" onclick="handleSave()">✅ Αποθήκευση Παραγγελίας</button>
+                <button type="button" id="formPrintBtn" style="display:none; background:#6c757d; margin-top:10px;" onclick="printFromForm()">🖨️ Εκτύπωση Παραγγελίας</button>
+            </div>
         </form>
     </div>
+
+    <div id="printArea" class="print-only"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
     <script>
-        // Έλεγχος αν ήρθαμε από το "Edit"
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const editId = params.get('edit');
