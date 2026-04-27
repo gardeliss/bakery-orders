@@ -1,34 +1,5 @@
-<!DOCTYPE html>
-<html lang="el">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Διαχείριση - Ζαχαροπλαστείο Ζάχαρη</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container no-print">
-        <div class="banner">
-            <img src="banner.png" alt="Ζαχαροπλαστείο Ζάχαρη">
-        </div>
-
-        <div class="nav">
-            <a href="index.html" class="nav-link">➕ Νέα Καταχώρηση</a>
-            <a href="calendar.html" class="nav-link">📅 Ημερολόγιο & Εβδομάδα</a>
-        </div>
-
-        <h2>🔍 Αναζήτηση Παραγγελιών</h2>
-        <input type="text" id="searchInput" onkeyup="filterOrders()" placeholder="Αναζήτηση με Όνομα, Επώνυμο ή Τηλέφωνο...">
-        
-        <div id="ordersList"></div>
-    </div>
-
-    <div id="printArea" class="print-only"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
-    <script>
-        window.onload = fetchOrders;
-    </script>
-</body>
-</html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+<script>
+    window.onload = fetchOrders; // Εδώ καλείται η συνάρτηση
+</script>
