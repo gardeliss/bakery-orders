@@ -11,31 +11,69 @@
         <div class="banner"><img src="banner.png"></div>
         <div class="nav">
             <a href="admin.html" class="nav-link">🔍 Αναζήτηση</a>
-            <a href="calendar.html" class="nav-link">📅 Ημερολόγιο</a>
+            <a href="calendar.html" class="nav-link">📅 Ημερολόγιο & Εβδομάδα</a>
         </div>
+
+        <h2 id="formTitle">🍰 Νέα Παραγγελία</h2>
         <form id="orderForm">
             <input type="hidden" id="orderId">
+            
             <div class="row">
-                <input type="text" id="firstName" placeholder="Όνομα">
-                <input type="text" id="lastName" placeholder="Επώνυμο">
+                <div class="input-group">
+                    <label>Όνομα</label>
+                    <input type="text" id="firstName" required>
+                </div>
+                <div class="input-group">
+                    <label>Επώνυμο</label>
+                    <input type="text" id="lastName" required>
+                </div>
             </div>
-            <input type="tel" id="phone" placeholder="Τηλέφωνο">
-            <textarea id="description" placeholder="Περιγραφή..." rows="5"></textarea>
+            
             <div class="row">
-                <input type="date" id="deliveryDate">
-                <select id="locationType">
-                    <option value="Σπίτι">Σπίτι</option>
-                    <option value="Παιδότοπος">Παιδότοπος</option>
-                </select>
+                <div class="input-group">
+                    <label>Τηλέφωνο</label>
+                    <input type="tel" id="phone" required>
+                </div>
+                <div class="input-group">
+                    <label>Ημερομηνία Παράδοσης</label>
+                    <input type="date" id="deliveryDate" required>
+                </div>
             </div>
-            <input type="text" id="address" placeholder="Διεύθυνση">
+
+            <div class="input-group" style="margin-bottom:15px;">
+                <label>Περιγραφή Παραγγελίας</label>
+                <textarea id="description" rows="5" required></textarea>
+            </div>
+
             <div class="row">
-                <input type="number" id="totalPrice" placeholder="Σύνολο (€)">
-                <input type="number" id="deposit" placeholder="Προκαταβολή (€)">
+                <div class="input-group">
+                    <label>Τοποθεσία</label>
+                    <select id="locationType">
+                        <option value="Σπίτι">Σπίτι</option>
+                        <option value="Παιδότοπος">Παιδότοπος</option>
+                        <option value="Καφέ">Καφέ</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Διεύθυνση</label>
+                    <input type="text" id="address">
+                </div>
             </div>
-            <div class="form-actions" style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
-                <button type="button" id="submitBtn" onclick="handleSave()" style="background:#2a5a5a; color:white; padding:12px; border:none; border-radius:8px;">✅ Αποθήκευση</button>
-                <button type="button" id="formPrintBtn" onclick="printFromForm()" style="display:none; background:#6c757d; color:white; padding:12px; border:none; border-radius:8px;">🖨️ Εκτύπωση</button>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Συνολική Τιμή (€)</label>
+                    <input type="number" id="totalPrice" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>Προκαταβολή (€)</label>
+                    <input type="number" id="deposit" step="0.01">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="submitBtn" onclick="handleSave()">✅ Αποθήκευση</button>
+                <button type="button" id="formPrintBtn" style="display:none;" onclick="printFromForm()">🖨️ Εκτύπωση Παραγγελίας</button>
             </div>
         </form>
     </div>
