@@ -1,4 +1,42 @@
-<div class="report-controls">
-    <button onclick="printWeeklyList()" class="nav-link-btn" style="flex:1">🖨️ Λίστα Εβδομάδας</button>
-    <button onclick="printWeeklyTable()" class="nav-link-btn" style="flex:1">🖨️ Πίνακας Εβδομάδας</button>
-</div>
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ημερολόγιο - Ζάχαρη</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container no-print">
+        <div class="banner"><img src="banner.png"></div>
+        <div class="nav">
+            <a href="index.html" class="nav-link">➕ Νέα</a>
+            <a href="admin.html" class="nav-link">🔍 Αναζήτηση</a>
+        </div>
+
+        <div class="report-controls">
+            <button onclick="printWeeklyList()" class="nav-link-btn" style="flex:1">📋 Λίστα Εβδομάδας</button>
+            <button onclick="printWeeklyTable()" class="nav-link-btn" style="flex:1">📊 Πίνακας Εβδομάδας</button>
+        </div>
+
+        <div id="calendar-container">
+            <div id="calendar"></div>
+        </div>
+        <p style="text-align:center; font-size:12px; color:#666; margin-top:10px;">💡 Σύρετε (swipe) αριστερά/δεξιά για αλλαγή μήνα</p>
+    </div>
+
+    <div id="printArea" class="print-only"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script src="https://unpkg.com/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="script.js"></script>
+    <script>
+        window.onload = async () => {
+            await fetchOrders();
+            initAdvancedCalendar();
+        };
+    </script>
+</body>
+</html>
