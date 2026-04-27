@@ -1,87 +1,118 @@
 /* style.css */
+* { box-sizing: border-box; } /* Αυτό εμποδίζει τα πεδία να βγαίνουν έξω */
+
 :root {
     --petrol: #2a5a5a;
-    --bg: #f8f9fa;
+    --bg: #f4f7f6;
 }
 
 body { 
-    font-family: 'Segoe UI', sans-serif; 
-    background: var(--bg); 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    background-color: var(--bg); 
     margin: 0; 
-    padding: 10px; 
+    padding: 15px; 
 }
 
 .container { 
     max-width: 700px; 
-    margin: 20px auto; 
+    margin: auto; 
     background: white; 
-    padding: 20px; 
+    padding: 25px; 
     border-radius: 12px; 
     box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
 }
 
 .banner img { width: 100%; border-radius: 8px; margin-bottom: 20px; }
 
-/* Μενού */
-.nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+/* Navigation */
+.nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
 .nav-link { 
     text-decoration: none; 
     color: var(--petrol); 
     font-weight: bold; 
-    padding: 8px 15px; 
-    border: 1.5px solid var(--petrol); 
+    padding: 8px 16px; 
+    border: 2px solid var(--petrol); 
     border-radius: 20px; 
+    font-size: 14px;
+    transition: 0.3s;
+}
+.nav-link:hover { background: var(--petrol); color: white; }
+
+/* Φόρμα & Rows */
+.row { 
+    display: flex; 
+    gap: 15px; 
+    margin-bottom: 15px; 
+    flex-wrap: wrap; 
+}
+
+.input-group { 
+    flex: 1; 
+    min-width: 250px; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+.input-group label { 
+    font-weight: bold; 
+    margin-bottom: 6px; 
+    color: var(--petrol); 
     font-size: 14px;
 }
 
-/* Φόρμα */
-.row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-.input-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
-.input-group label { font-weight: bold; margin-bottom: 5px; color: var(--petrol); }
-
 input, textarea, select { 
     width: 100%; 
-    padding: 10px; 
+    padding: 12px; 
     border: 1px solid #ccc; 
-    border-radius: 6px; 
-    box-sizing: border-box; 
+    border-radius: 8px; 
     font-size: 16px;
+    outline: none;
 }
 
-/* Οικονομικά */
+/* Οικονομικά Section */
 .finances-header { 
-    margin-top: 25px; 
-    padding-top: 10px; 
+    margin-top: 30px; 
+    padding-top: 15px; 
     border-top: 2px solid #eee; 
     color: var(--petrol); 
+    width: 100%;
 }
 
-/* Λίστα Αναζήτησης */
+/* Λίστα Αναζήτησης - Layout Fix */
 .order-card {
     background: #fff;
     padding: 15px;
     border-radius: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     border: 1px solid #eee;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.card-actions { display: flex; gap: 8px; }
+.card-actions { display: flex; gap: 10px; }
 
 .btn-small {
     background: #f8f9fa;
     border: 1px solid #ddd;
-    border-radius: 6px;
-    width: 40px;
-    height: 40px;
+    border-radius: 8px;
+    width: 45px;
+    height: 45px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Εκτύπωση */
+/* Κουμπιά Αποθήκευσης/Εκτύπωσης */
+#submitBtn { background: var(--petrol); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-size: 17px; font-weight: bold; margin-top: 10px;}
+#formPrintBtn { background: #6c757d; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-size: 17px; font-weight: bold; margin-top: 10px; }
+
+/* Printing */
+#printArea { display: none; }
 @media print {
     .no-print { display: none !important; }
-    .print-only { display: block !important; }
+    #printArea { display: block !important; }
 }

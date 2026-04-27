@@ -4,19 +4,18 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allOrders = [];
-let calendar;
 
-// Φόρτωση παραγγελιών
+// 1. Λήψη Παραγγελιών
 async function fetchOrders() {
     try {
         const { data, error } = await _supabase.from('orders').select('*').order('delivery_date', { ascending: true });
         if (error) throw error;
         allOrders = data;
         if (document.getElementById('ordersList')) displayOrders(data);
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error("Σφάλμα:", err.message); }
 }
 
-// Αποθήκευση
+// 2. Αποθήκευση
 async function handleSave() {
     const btn = document.getElementById('submitBtn');
     const orderId = document.getElementById('orderId').value;
@@ -32,17 +31,22 @@ async function handleSave() {
         deposit: parseFloat(document.getElementById('deposit').value) || 0
     };
 
+    if (!orderData.first_name || !orderData.last_name || !orderData.delivery_date) {
+        alert("Συμπληρώστε τα υποχρεωτικά πεδία!");
+        return;
+    }
+
     btn.disabled = true;
     try {
         let res = orderId ? await _supabase.from('orders').update(orderData).eq('id', orderId) : await _supabase.from('orders').insert([orderData]);
         if (res.error) throw res.error;
-        alert("✅ Αποθηκεύτηκε!");
+        alert("✅ Επιτυχής αποθήκευση!");
         window.location.href = 'admin.html';
-    } catch (err) { alert(err.message); }
+    } catch (err) { alert("Σφάλμα: " + err.message); }
     btn.disabled = false;
 }
 
-// Εμφάνιση στην Admin
+// 3. Εμφάνιση Λίστας
 function displayOrders(orders) {
     const list = document.getElementById('ordersList');
     if (!list) return;
@@ -60,10 +64,11 @@ function displayOrders(orders) {
     `).join('');
 }
 
-// Καθαρή Εκτύπωση
+// 4. Καθαρή Εκτύπωση
 function renderAndPrint(htmlContent) {
     const printArea = document.getElementById('printArea');
-    printArea.innerHTML = `<div style="text-align:center"><img src="banner.png" style="max-width:200px;"></div>` + htmlContent;
+    if (!printArea) return;
+    printArea.innerHTML = `<div style="text-align:center; margin-bottom:20px;"><img src="banner.png" style="max-width:200px;"></div>` + htmlContent;
     window.print();
     setTimeout(() => { printArea.innerHTML = ""; }, 500);
 }
@@ -72,17 +77,23 @@ function printOneOrder(id) {
     const o = allOrders.find(x => x.id == id);
     if (!o) return;
     const html = `
-        <h2>ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ</h2>
-        <p><strong>Πελάτης:</strong> ${o.first_name} ${o.last_name} (📞 ${o.phone})</p>
+        <h2 style="text-align:center">ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ</h2>
+        <p><strong>Πελάτης:</strong> ${o.last_name} ${o.first_name}</p>
+        <p><strong>Τηλέφωνο:</strong> ${o.phone}</p>
         <p><strong>Παράδοση:</strong> ${o.delivery_date.split('-').reverse().join('-')} (${o.location_type})</p>
-        <hr><p>${o.description.replace(/\n/g, '<br>')}</p><hr>
-        <h3>Υπόλοιπο: ${(o.total_price - o.deposit).toFixed(2)} €</h3>`;
+        <p><strong>Διεύθυνση:</strong> ${o.address || '-'}</p>
+        <hr>
+        <p><strong>ΠΕΡΙΓΡΑΦΗ:</strong><br>${o.description.replace(/\n/g, '<br>')}</p>
+        <hr>
+        <h3>Σύνολο: ${o.total_price.toFixed(2)}€ | Προκαταβολή: ${o.deposit.toFixed(2)}€</h3>
+        <h2 style="color:var(--petrol)">Υπόλοιπο: ${(o.total_price - o.deposit).toFixed(2)} €</h2>
+    `;
     renderAndPrint(html);
 }
 
-// Εβδομαδιαία Λίστα
+// 5. Εβδομαδιαία Λίστα (με Ημέρα)
 function printWeeklyList() {
-    const startStr = prompt("Ημερομηνία έναρξης (YYYY-MM-DD):");
+    const startStr = prompt("Ημερομηνία έναρξης εβδομάδας (YYYY-MM-DD):");
     if (!startStr) return;
     const start = new Date(startStr);
     const end = new Date(start); end.setDate(start.getDate() + 7);
@@ -92,24 +103,24 @@ function printWeeklyList() {
         return d >= start && d < end;
     });
 
-    let content = `<h2>🖨️ Εβδομαδιαίο Πλάνο</h2>`;
+    let content = `<h2 style="text-align:center">🖨️ Εβδομαδιαίο Πλάνο</h2>`;
     const days = [...new Set(filtered.map(o => o.delivery_date))].sort();
+    
     days.forEach(day => {
         const dObj = new Date(day);
         const dayName = dObj.toLocaleDateString('el-GR', { weekday: 'long' });
-        content += `<div style="border-bottom: 2px solid #333; margin-top:20px;">
-            <h3 style="background:#eee; padding:5px;">📅 ${dayName.toUpperCase()} - ${day.split('-').reverse().join('-')}</h3>`;
+        content += `<div style="border-bottom: 2px solid #333; margin-top:20px; padding-bottom:10px;">
+            <h3 style="background:#f0f0f0; padding:8px;">📅 ${dayName.toUpperCase()} - ${day.split('-').reverse().join('-')}</h3>`;
         filtered.filter(o => o.delivery_date === day).forEach(o => {
-            content += `<p><strong>• ${o.last_name}</strong>: ${o.description} <span>(📞 ${o.phone})</span></p>`;
+            content += `<p style="margin:10px 0;"><strong>• ${o.last_name} ${o.first_name}</strong>: ${o.description} <span style="float:right">📞 ${o.phone}</span></p>`;
         });
         content += `</div>`;
     });
     renderAndPrint(content);
 }
 
-// Edit Mode
+// 6. Edit Mode
 async function loadOrderToEdit(id) {
-    await fetchOrders();
     const { data } = await _supabase.from('orders').select('*').eq('id', id).single();
     if (data) {
         document.getElementById('orderId').value = data.id;
@@ -122,8 +133,34 @@ async function loadOrderToEdit(id) {
         document.getElementById('address').value = data.address;
         document.getElementById('totalPrice').value = data.total_price;
         document.getElementById('deposit').value = data.deposit;
-        document.getElementById('formTitle').innerText = "📝 Επεξεργασία";
-        document.getElementById('submitBtn').innerText = "Ενημέρωση";
+        
+        document.getElementById('formTitle').innerText = "📝 Επεξεργασία Παραγγελίας";
+        document.getElementById('submitBtn').innerText = "Ενημέρωση Παραγγελίας";
         document.getElementById('formPrintBtn').style.display = "block";
     }
+}
+
+function initAdvancedCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'el',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        events: allOrders.map(o => ({
+            title: `${o.last_name} (${o.location_type})`,
+            start: o.delivery_date,
+            extendedProps: { id: o.id },
+            backgroundColor: o.location_type === 'Σπίτι' ? '#2a5a5a' : '#d4a373'
+        })),
+        eventClick: (info) => {
+            window.location.href = `index.html?edit=${info.event.extendedProps.id}`;
+        }
+    });
+    calendar.render();
 }
