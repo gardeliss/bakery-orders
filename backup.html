@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Restore - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="modern-style.css">
+</head>
+<body>
+    <nav id="navbar" class="navbar"></nav>
+
+    <div class="container">
+        <!-- Create Backup Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">💾 Δημιουργία Backup</h2>
+            </div>
+            <div class="card-body">
+                <p style="margin-bottom: 20px; color: #6c757d;">
+                    Δημιουργήστε ένα πλήρες αντίγραφο ασφαλείας όλων των δεδομένων σας (παραγγελίες, πελάτες, χρήστες).
+                </p>
+
+                <div class="btn-group">
+                    <button onclick="createBackup()" class="btn btn-primary">
+                        💾 Δημιουργία Backup Τώρα
+                    </button>
+                    <button onclick="downloadAllData()" class="btn btn-secondary">
+                        📥 Export Όλων των Δεδομένων (JSON)
+                    </button>
+                    <button onclick="exportToCSV()" class="btn btn-outline">
+                        📊 Export σε CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup History -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📋 Ιστορικό Backups</h2>
+                <button onclick="loadBackups()" class="btn btn-outline">
+                    🔄 Ανανέωση
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Ημερομηνία</th>
+                                <th>Τύπος</th>
+                                <th>Δημιουργήθηκε από</th>
+                                <th>Μέγεθος</th>
+                                <th>Ενέργειες</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backupsTableBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restore Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">🔄 Επαναφορά από Backup</h2>
+            </div>
+            <div class="card-body">
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                    <strong>⚠️ Προσοχή:</strong> Η επαναφορά θα αντικαταστήσει ΟΛΑ τα τρέχοντα δεδομένα με αυτά από το backup.
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Επιλέξτε Αρχείο Backup (JSON)</label>
+                    <input type="file" id="restoreFile" class="form-control" accept=".json">
+                </div>
+
+                <button onclick="restoreFromFile()" class="btn btn-danger">
+                    🔄 Επαναφορά Δεδομένων
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📊 Στατιστικά Βάσης</h2>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-value" id="totalOrders">0</div>
+                        <div class="stat-label">Παραγγελίες</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-value" id="totalCustomers">0</div>
+                        <div class="stat-label">Πελάτες</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);">
+                        <div class="stat-icon">👤</div>
+                        <div class="stat-value" id="totalUsers">0</div>
+                        <div class="stat-label">Χρήστες</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-value" id="totalActivity">0</div>
+                        <div class="stat-label">Ενέργειες</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        Auth.requireAuth();
+        Auth.requireAdmin();
+
+        let allBackups = [];
+
+        async function loadBackups() {
+            showLoading();
+
+            try {
+                // Load backups
+                const { data: backups, error: backupsError } = await _supabase
+                    .from('backups')
+                    .select('*, users(full_name)')
+                    .order('created_at', { ascending: false });
+
+                if (backupsError) throw backupsError;
+                allBackups = backups || [];
+
+                displayBackups();
+                await loadStatistics();
+
+            } catch (err) {
+                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        function displayBackups() {
+            const tbody = document.getElementById('backupsTableBody');
+
+            if (allBackups.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #6c757d; padding: 40px;">Δεν υπάρχουν backups</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allBackups.map(backup => {
+                const dateTime = new Date(backup.created_at).toLocaleString('el-GR');
+                const dataSize = JSON.stringify(backup.backup_data).length;
+                const sizeKB = (dataSize / 1024).toFixed(2);
+                const userName = backup.users?.full_name || 'Άγνωστος';
+
+                return `
+                    <tr>
+                        <td>${dateTime}</td>
+                        <td><span class="badge badge-${backup.backup_type === 'manual' ? 'info' : 'success'}">${backup.backup_type === 'manual' ? 'Χειροκίνητο' : 'Αυτόματο'}</span></td>
+                        <td>${userName}</td>
+                        <td>${sizeKB} KB</td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="downloadBackup('${backup.id}')" class="btn btn-sm btn-secondary">
+                                    📥 Download
+                                </button>
+                                <button onclick="restoreBackup('${backup.id}')" class="btn btn-sm btn-warning">
+                                    🔄 Επαναφορά
+                                </button>
+                                <button onclick="deleteBackup('${backup.id}')" class="btn btn-sm btn-danger">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function loadStatistics() {
+            try {
+                const [orders, customers, users, activity] = await Promise.all([
+                    _supabase.from('orders').select('id', { count: 'exact', head: true }),
+                    _supabase.from('customers').select('id', { count: 'exact', head: true }),
+                    _supabase.from('users').select('id', { count: 'exact', head: true }),
+                    _supabase.from('activity_log').select('id', { count: 'exact', head: true })
+                ]);
+
+                document.getElementById('totalOrders').textContent = orders.count || 0;
+                document.getElementById('totalCustomers').textContent = customers.count || 0;
+                document.getElementById('totalUsers').textContent = users.count || 0;
+                document.getElementById('totalActivity').textContent = activity.count || 0;
+
+            } catch (err) {
+                console.error('Error loading statistics:', err);
+            }
+        }
+
+        async function createBackup() {
+            confirmDialog(
+                'Θέλετε να δημιουργήσετε ένα νέο backup; Αυτό θα αποθηκεύσει όλα τα τρέχοντα δεδομένα.',
+                async () => {
+                    showLoading();
+
+                    try {
+                        // Fetch all data
+                        const [orders, customers, users, activity] = await Promise.all([
+                            _supabase.from('orders').select('*'),
+                            _supabase.from('customers').select('*'),
+                            _supabase.from('users').select('*'),
+                            _supabase.from('activity_log').select('*')
+                        ]);
+
+                        const backupData = {
+                            timestamp: new Date().toISOString(),
+                            orders: orders.data || [],
+                            customers: customers.data || [],
+                            users: users.data || [],
+                            activity_log: activity.data || []
+                        };
+
+                        // Save to backups table
+                        const { error } = await _supabase
+                            .from('backups')
+                            .insert([{
+                                created_by: Auth.getCurrentUser().id,
+                                backup_data: backupData,
+                                backup_type: 'manual'
+                            }]);
+
+                        if (error) throw error;
+
+                        await Auth.logActivity('backup', 'user', null, { 
+                            type: 'manual',
+                            orders_count: backupData.orders.length,
+                            customers_count: backupData.customers.length
+                        });
+
+                        showToast('Το backup δημιουργήθηκε επιτυχώς!', 'success');
+                        loadBackups();
+
+                    } catch (err) {
+                        showToast('Σφάλμα δημιουργίας backup: ' + err.message, 'error');
+                    }
+
+                    hideLoading();
+                }
+            );
+        }
+
+        async function downloadBackup(backupId) {
+            try {
+                const backup = allBackups.find(b => b.id === backupId);
+                if (!backup) return;
+
+                const dataStr = JSON.stringify(backup.backup_data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `backup_${new Date(backup.created_at).toISOString().split('T')[0]}.json`;
+                link.click();
+
+                showToast('Το backup μεταφορτώθηκε!', 'success');
+
+            } catch (err) {
+                showToast('Σφάλμα: ' + err.message, 'error');
+            }
+        }
+
+        async function downloadAllData() {
+            showLoading();
+
+            try {
+                const [orders, customers, users] = await Promise.all([
+                    _supabase.from('orders').select('*'),
+                    _supabase.from('customers').select('*'),
+                    _supabase.from('users').select('id, email, full_name, role')
+                ]);
+
+                const exportData = {
+                    export_date: new Date().toISOString(),
+                    orders: orders.data || [],
+                    customers: customers.data || [],
+                    users: users.data || []
+                };
+
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `zachari_export_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+
+                showToast('Τα δεδομένα εξήχθησαν επιτυχώς!', 'success');
+
+            } catch (err) {
+                showToast('Σφάλμα εξαγωγής: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        async function exportToCSV() {
+            showLoading();
+
+            try {
+                const { data: orders } = await _supabase.from('orders').select('*');
+                
+                // Create CSV
+                let csv = 'Ημερομηνία,Όνομα,Επώνυμο,Τηλέφωνο,Περιγραφή,Τοποθεσία,Διεύθυνση,Σύνολο,Προκαταβολή,Υπόλοιπο,Κατάσταση\n';
+                
+                orders.forEach(o => {
+                    const desc = o.description.replace(/"/g, '""').replace(/\n/g, ' ');
+                    csv += `"${formatDate(o.delivery_date)}","${o.first_name}","${o.last_name}","${o.phone}","${desc}","${o.location_type}","${o.address || ''}","${o.total_price}","${o.deposit}","${o.total_price - o.deposit}","${o.status}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+
+                showToast('Το CSV εξήχθη επιτυχώς!', 'success');
+
+            } catch (err) {
+                showToast('Σφάλμα: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        async function restoreBackup(backupId) {
+            const backup = allBackups.find(b => b.id === backupId);
+            if (!backup) return;
+
+            confirmDialog(
+                `⚠️ ΠΡΟΣΟΧΗ: Θέλετε να επαναφέρετε το backup από ${new Date(backup.created_at).toLocaleString('el-GR')}; ΟΛΑ τα τρέχοντα δεδομένα θα αντικατασταθούν!`,
+                async () => {
+                    showLoading();
+
+                    try {
+                        const data = backup.backup_data;
+
+                        // Delete existing data
+                        await Promise.all([
+                            _supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+                            _supabase.from('customers').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+                        ]);
+
+                        // Insert backup data
+                        if (data.orders && data.orders.length > 0) {
+                            await _supabase.from('orders').insert(data.orders);
+                        }
+                        if (data.customers && data.customers.length > 0) {
+                            await _supabase.from('customers').insert(data.customers);
+                        }
+
+                        await Auth.logActivity('restore', 'user', null, { 
+                            backup_id: backupId,
+                            backup_date: backup.created_at
+                        });
+
+                        showToast('Η επαναφορά ολοκληρώθηκε επιτυχώς!', 'success');
+                        
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 2000);
+
+                    } catch (err) {
+                        showToast('Σφάλμα επαναφοράς: ' + err.message, 'error');
+                    }
+
+                    hideLoading();
+                }
+            );
+        }
+
+        async function restoreFromFile() {
+            const fileInput = document.getElementById('restoreFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showToast('Παρακαλώ επιλέξτε ένα αρχείο', 'warning');
+                return;
+            }
+
+            confirmDialog(
+                '⚠️ ΠΡΟΣΟΧΗ: Η επαναφορά από αρχείο θα αντικαταστήσει ΟΛΑ τα τρέχοντα δεδομένα. Είστε σίγουροι;',
+                async () => {
+                    showLoading();
+
+                    try {
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+
+                        // Validate data structure
+                        if (!data.orders || !Array.isArray(data.orders)) {
+                            throw new Error('Μη έγκυρη μορφή αρχείου backup');
+                        }
+
+                        // Delete existing data
+                        await Promise.all([
+                            _supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+                            _supabase.from('customers').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+                        ]);
+
+                        // Insert backup data
+                        if (data.orders.length > 0) {
+                            await _supabase.from('orders').insert(data.orders);
+                        }
+                        if (data.customers && data.customers.length > 0) {
+                            await _supabase.from('customers').insert(data.customers);
+                        }
+
+                        await Auth.logActivity('restore', 'user', null, { 
+                            type: 'file_upload',
+                            filename: file.name
+                        });
+
+                        showToast('Η επαναφορά ολοκληρώθηκε επιτυχώς!', 'success');
+                        
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 2000);
+
+                    } catch (err) {
+                        showToast('Σφάλμα επαναφοράς: ' + err.message, 'error');
+                    }
+
+                    hideLoading();
+                }
+            );
+        }
+
+        async function deleteBackup(backupId) {
+            confirmDialog(
+                'Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το backup;',
+                async () => {
+                    showLoading();
+
+                    try {
+                        const { error } = await _supabase
+                            .from('backups')
+                            .delete()
+                            .eq('id', backupId);
+
+                        if (error) throw error;
+
+                        showToast('Το backup διαγράφηκε', 'success');
+                        loadBackups();
+
+                    } catch (err) {
+                        showToast('Σφάλμα: ' + err.message, 'error');
+                    }
+
+                    hideLoading();
+                }
+            );
+        }
+
+        window.onload = loadBackups;
+    </script>
+</body>
+</html>

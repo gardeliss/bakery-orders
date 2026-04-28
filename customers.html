@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Πελατολόγιο - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="modern-style.css">
+</head>
+<body>
+    <nav id="navbar" class="navbar"></nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">👥 Πελατολόγιο</h2>
+                <button onclick="syncCustomers()" class="btn btn-primary">
+                    🔄 Συγχρονισμός από Παραγγελίες
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Search -->
+                <div class="search-bar">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="🔍 Αναζήτηση με όνομα, επώνυμο ή τηλέφωνο..."
+                        onkeyup="filterCustomers()"
+                    >
+                    <span class="search-icon">🔍</span>
+                </div>
+
+                <!-- Filter and Sort -->
+                <div class="form-row" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label class="form-label">Ταξινόμηση</label>
+                        <select id="sortOrder" class="form-control" onchange="filterCustomers()">
+                            <option value="orders_desc">Περισσότερες Παραγγελίες</option>
+                            <option value="spent_desc">Μεγαλύτερη Δαπάνη</option>
+                            <option value="name_asc">Όνομα (Α-Ω)</option>
+                            <option value="name_desc">Όνομα (Ω-Α)</option>
+                            <option value="recent">Πιο Πρόσφατοι</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Results Count -->
+                <div style="margin-bottom: 15px; color: #6c757d;">
+                    <span id="resultsCount">0</span> πελάτες
+                </div>
+
+                <!-- Customers Table -->
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Όνομα</th>
+                                <th>Τηλέφωνο</th>
+                                <th>Email</th>
+                                <th>Παραγγελίες</th>
+                                <th>Σύνολο</th>
+                                <th>Ενέργειες</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customersTableBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        Auth.requireAuth();
+
+        let allCustomers = [];
+
+        async function fetchCustomers() {
+            showLoading();
+
+            try {
+                const { data, error } = await _supabase
+                    .from('customers')
+                    .select('*')
+                    .order('total_spent', { ascending: false });
+
+                if (error) throw error;
+
+                allCustomers = data || [];
+                filterCustomers();
+
+            } catch (err) {
+                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        function filterCustomers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sortOrder = document.getElementById('sortOrder').value;
+
+            let filtered = allCustomers.filter(customer => {
+                return customer.first_name.toLowerCase().includes(searchTerm) ||
+                       customer.last_name.toLowerCase().includes(searchTerm) ||
+                       customer.phone.includes(searchTerm) ||
+                       (customer.email && customer.email.toLowerCase().includes(searchTerm));
+            });
+
+            // Sort
+            filtered.sort((a, b) => {
+                switch (sortOrder) {
+                    case 'orders_desc':
+                        return b.total_orders - a.total_orders;
+                    case 'spent_desc':
+                        return b.total_spent - a.total_spent;
+                    case 'name_asc':
+                        return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name);
+                    case 'name_desc':
+                        return (b.last_name + b.first_name).localeCompare(a.last_name + a.first_name);
+                    case 'recent':
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    default:
+                        return 0;
+                }
+            });
+
+            displayCustomers(filtered);
+        }
+
+        function displayCustomers(customers) {
+            const tbody = document.getElementById('customersTableBody');
+            const count = document.getElementById('resultsCount');
+
+            count.textContent = customers.length;
+
+            if (customers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #6c757d; padding: 40px;">Δεν βρέθηκαν πελάτες</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = customers.map(customer => `
+                <tr>
+                    <td>
+                        <strong>${customer.last_name} ${customer.first_name}</strong>
+                        ${customer.notes ? `<br><small style="color: #6c757d;">${customer.notes.substring(0, 50)}${customer.notes.length > 50 ? '...' : ''}</small>` : ''}
+                    </td>
+                    <td>${customer.phone}</td>
+                    <td>${customer.email || '-'}</td>
+                    <td><span class="badge badge-info">${customer.total_orders}</span></td>
+                    <td><strong>${formatCurrency(customer.total_spent)}</strong></td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="customer-profile.html?id=${customer.id}" class="btn btn-sm btn-secondary">
+                                👤 Προφίλ
+                            </a>
+                            <button onclick="editCustomer('${customer.id}')" class="btn btn-sm btn-outline">
+                                📝
+                            </button>
+                            <button onclick="deleteCustomer('${customer.id}')" class="btn btn-sm btn-danger">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function editCustomer(customerId) {
+            const customer = allCustomers.find(c => c.id === customerId);
+            if (!customer) return;
+
+            const modalContent = `
+                <form id="editCustomerForm" onsubmit="saveCustomer(event, '${customerId}')">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Όνομα</label>
+                            <input type="text" id="editFirstName" class="form-control" value="${customer.first_name}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Επώνυμο</label>
+                            <input type="text" id="editLastName" class="form-control" value="${customer.last_name}" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Τηλέφωνο</label>
+                            <input type="tel" id="editPhone" class="form-control" value="${customer.phone}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="editEmail" class="form-control" value="${customer.email || ''}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Διεύθυνση</label>
+                        <input type="text" id="editAddress" class="form-control" value="${customer.address || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Σημειώσεις</label>
+                        <textarea id="editNotes" class="form-control" rows="3">${customer.notes || ''}</textarea>
+                    </div>
+                </form>
+            `;
+
+            showModal('📝 Επεξεργασία Πελάτη', modalContent, [
+                { text: 'Ακύρωση', class: 'btn-secondary' },
+                { 
+                    text: 'Αποθήκευση', 
+                    class: 'btn-primary',
+                    onClick: () => {
+                        document.getElementById('editCustomerForm').requestSubmit();
+                    }
+                }
+            ]);
+        }
+
+        async function saveCustomer(e, customerId) {
+            e.preventDefault();
+            showLoading();
+
+            const customerData = {
+                first_name: document.getElementById('editFirstName').value.trim(),
+                last_name: document.getElementById('editLastName').value.trim(),
+                phone: document.getElementById('editPhone').value.trim(),
+                email: document.getElementById('editEmail').value.trim() || null,
+                address: document.getElementById('editAddress').value.trim() || null,
+                notes: document.getElementById('editNotes').value.trim() || null,
+                updated_at: new Date().toISOString()
+            };
+
+            try {
+                const { error } = await _supabase
+                    .from('customers')
+                    .update(customerData)
+                    .eq('id', customerId);
+
+                if (error) throw error;
+
+                await Auth.logActivity('update', 'customer', customerId, { customer: customerData });
+                showToast('Ο πελάτης ενημερώθηκε επιτυχώς!', 'success');
+                fetchCustomers();
+
+            } catch (err) {
+                showToast('Σφάλμα: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        async function deleteCustomer(customerId) {
+            const customer = allCustomers.find(c => c.id === customerId);
+            if (!customer) return;
+
+            confirmDialog(
+                `Είστε σίγουροι ότι θέλετε να διαγράψετε τον/την ${customer.last_name} ${customer.first_name}; Οι παραγγελίες τους δεν θα διαγραφούν.`,
+                async () => {
+                    showLoading();
+
+                    try {
+                        const { error } = await _supabase
+                            .from('customers')
+                            .delete()
+                            .eq('id', customerId);
+
+                        if (error) throw error;
+
+                        await Auth.logActivity('delete', 'customer', customerId, { 
+                            customer: `${customer.last_name} ${customer.first_name}`
+                        });
+
+                        showToast('Ο πελάτης διαγράφηκε επιτυχώς', 'success');
+                        fetchCustomers();
+
+                    } catch (err) {
+                        showToast('Σφάλμα διαγραφής: ' + err.message, 'error');
+                    }
+
+                    hideLoading();
+                }
+            );
+        }
+
+        async function syncCustomers() {
+            confirmDialog(
+                'Θέλετε να συγχρονίσετε το πελατολόγιο με τις παραγγελίες; Αυτό θα ενημερώσει τα στατιστικά όλων των πελατών.',
+                async () => {
+                    showLoading();
+
+                    try {
+                        // Get all orders
+                        const { data: orders } = await _supabase
+                            .from('orders')
+                            .select('*');
+
+                        if (!orders) throw new Error('Δεν βρέθηκαν παραγγελίες');
+
+                        // Group by phone
+                        const customerMap = {};
+                        orders.forEach(order => {
+                            if (!customerMap[order.phone]) {
+                                customerMap[order.phone] = {
+                                    first_name: order.first_name,
+                                    last_name: order.last_name,
+                                    phone: order.phone,
+                                    address: order.address,
+                                    total_orders: 0,
+                                    total_spent: 0
+                                };
+                            }
+                            customerMap[order.phone].total_orders++;
+                            customerMap[order.phone].total_spent += parseFloat(order.total_price) || 0;
+                        });
+
+                        // Upsert customers
+                        for (const phone in customerMap) {
+                            const customerData = customerMap[phone];
+                            
+                            // Check if exists
+                            const { data: existing } = await _supabase
+                                .from('customers')
+                                .select('id')
+                                .eq('phone', phone)
+                                .single();
+
+                            if (existing) {
+                                // Update
+                                await _supabase
+                                    .from('customers')
+                                    .update({
+                                        total_orders: customerData.total_orders,
+                                        total_spent: customerData.total_spent,
+                                        updated_at: new Date().toISOString()
+                                    })
+                                    .eq('phone', phone);
+                            } else {
+                                // Insert
+                                await _supabase
+                                    .from('customers')
+                                    .insert([customerData]);
+                            }
+                        }
+
+                        await Auth.logActivity('sync', 'customer', null, { 
+                            count: Object.keys(customerMap).length 
+                        });
+
+                        showToast('Ο συγχρονισμός ολοκληρώθηκε επιτυχώς!', 'success');
+                        fetchCustomers();
+
+                    } catch (err) {
+                        showToast('Σφάλμα συγχρονισμού: ' + err.message, 'error');
+                    }
+
+                    hideLoading();
+                }
+            );
+        }
+
+        window.onload = fetchCustomers;
+    </script>
+</body>
+</html>

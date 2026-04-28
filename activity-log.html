@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ιστορικό Ενεργειών - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="modern-style.css">
+</head>
+<body>
+    <nav id="navbar" class="navbar"></nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📝 Ιστορικό Ενεργειών</h2>
+                <button onclick="exportActivityLog()" class="btn btn-primary">
+                    💾 Export CSV
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Filters -->
+                <div class="form-row" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label class="form-label">Χρήστης</label>
+                        <select id="userFilter" class="form-control" onchange="filterActivity()">
+                            <option value="">Όλοι</option>
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ενέργεια</label>
+                        <select id="actionFilter" class="form-control" onchange="filterActivity()">
+                            <option value="">Όλες</option>
+                            <option value="login">Σύνδεση</option>
+                            <option value="logout">Αποσύνδεση</option>
+                            <option value="create">Δημιουργία</option>
+                            <option value="update">Ενημέρωση</option>
+                            <option value="delete">Διαγραφή</option>
+                            <option value="print">Εκτύπωση</option>
+                            <option value="backup">Backup</option>
+                            <option value="restore">Επαναφορά</option>
+                            <option value="sync">Συγχρονισμός</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Τύπος</label>
+                        <select id="entityFilter" class="form-control" onchange="filterActivity()">
+                            <option value="">Όλα</option>
+                            <option value="order">Παραγγελίες</option>
+                            <option value="customer">Πελάτες</option>
+                            <option value="user">Χρήστες</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Από Ημερομηνία</label>
+                        <input type="date" id="dateFrom" class="form-control" onchange="filterActivity()">
+                    </div>
+                </div>
+
+                <!-- Results Count -->
+                <div style="margin-bottom: 15px; color: #6c757d;">
+                    <span id="resultsCount">0</span> ενέργειες
+                </div>
+
+                <!-- Activity Table -->
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Ημ/νία & Ώρα</th>
+                                <th>Χρήστης</th>
+                                <th>Ενέργεια</th>
+                                <th>Τύπος</th>
+                                <th>Λεπτομέρειες</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTableBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;" id="pagination">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        Auth.requireAuth();
+        Auth.requireAdmin();
+
+        let allActivity = [];
+        let allUsers = [];
+        let currentPage = 1;
+        const itemsPerPage = 50;
+
+        async function loadActivityLog() {
+            showLoading();
+
+            try {
+                // Fetch users
+                const { data: users, error: usersError } = await _supabase
+                    .from('users')
+                    .select('id, full_name, email');
+
+                if (usersError) throw usersError;
+                allUsers = users || [];
+
+                // Populate user filter
+                const userFilter = document.getElementById('userFilter');
+                userFilter.innerHTML = '<option value="">Όλοι</option>' +
+                    allUsers.map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
+
+                // Fetch activity log
+                const { data: activity, error: activityError } = await _supabase
+                    .from('activity_log')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (activityError) throw activityError;
+
+                allActivity = activity || [];
+                filterActivity();
+
+            } catch (err) {
+                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        function filterActivity() {
+            const userFilter = document.getElementById('userFilter').value;
+            const actionFilter = document.getElementById('actionFilter').value;
+            const entityFilter = document.getElementById('entityFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+
+            let filtered = allActivity.filter(activity => {
+                const matchesUser = !userFilter || activity.user_id === userFilter;
+                const matchesAction = !actionFilter || activity.action === actionFilter;
+                const matchesEntity = !entityFilter || activity.entity_type === entityFilter;
+                const matchesDate = !dateFrom || activity.created_at.substring(0, 10) >= dateFrom;
+
+                return matchesUser && matchesAction && matchesEntity && matchesDate;
+            });
+
+            displayActivity(filtered);
+        }
+
+        function displayActivity(activities) {
+            const tbody = document.getElementById('activityTableBody');
+            const count = document.getElementById('resultsCount');
+
+            count.textContent = activities.length;
+
+            // Pagination
+            const totalPages = Math.ceil(activities.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageActivities = activities.slice(startIndex, endIndex);
+
+            if (pageActivities.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #6c757d; padding: 40px;">Δεν βρέθηκαν ενέργειες</td></tr>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            tbody.innerHTML = pageActivities.map(activity => {
+                const user = allUsers.find(u => u.id === activity.user_id);
+                const userName = user ? user.full_name : 'Άγνωστος';
+                const dateTime = new Date(activity.created_at).toLocaleString('el-GR');
+                
+                return `
+                    <tr>
+                        <td>${dateTime}</td>
+                        <td>${userName}</td>
+                        <td><span class="badge badge-${getActionColor(activity.action)}">${getActionText(activity.action)}</span></td>
+                        <td>${getEntityText(activity.entity_type)}</td>
+                        <td>${formatDetails(activity.details)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Render pagination
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            // Previous button
+            if (currentPage > 1) {
+                html += `<button class="btn btn-sm btn-outline" onclick="changePage(${currentPage - 1})">← Προηγούμενη</button>`;
+            }
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline'}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span style="padding: 8px;">...</span>';
+                }
+            }
+
+            // Next button
+            if (currentPage < totalPages) {
+                html += `<button class="btn btn-sm btn-outline" onclick="changePage(${currentPage + 1})">Επόμενη →</button>`;
+            }
+
+            pagination.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            filterActivity();
+        }
+
+        function getActionColor(action) {
+            const colors = {
+                'login': 'info',
+                'logout': 'secondary',
+                'create': 'success',
+                'update': 'warning',
+                'delete': 'danger',
+                'print': 'info',
+                'backup': 'success',
+                'restore': 'warning',
+                'sync': 'info'
+            };
+            return colors[action] || 'secondary';
+        }
+
+        function getActionText(action) {
+            const texts = {
+                'login': 'Σύνδεση',
+                'logout': 'Αποσύνδεση',
+                'create': 'Δημιουργία',
+                'update': 'Ενημέρωση',
+                'delete': 'Διαγραφή',
+                'print': 'Εκτύπωση',
+                'backup': 'Backup',
+                'restore': 'Επαναφορά',
+                'sync': 'Συγχρονισμός'
+            };
+            return texts[action] || action;
+        }
+
+        function getEntityText(entity) {
+            const texts = {
+                'order': 'Παραγγελία',
+                'customer': 'Πελάτης',
+                'user': 'Χρήστης'
+            };
+            return texts[entity] || entity;
+        }
+
+        function formatDetails(details) {
+            if (!details) return '-';
+            
+            try {
+                const obj = typeof details === 'string' ? JSON.parse(details) : details;
+                
+                // Format based on content
+                if (obj.type === 'single_order') return 'Μονή παραγγελία';
+                if (obj.type === 'today_orders') return `Σημερινές (${obj.count})`;
+                if (obj.type === 'weekly_list') return `Εβδομάδα: ${obj.date_range}`;
+                if (obj.type === 'weekly_table') return `Πίνακας: ${obj.date_range}`;
+                if (obj.type === 'monthly_table') return `Μήνας: ${obj.month}`;
+                if (obj.type === 'customer_report') return `Αναφορά (${obj.orders_count} παραγγελίες)`;
+                if (obj.customer) return obj.customer;
+                if (obj.count) return `Αριθμός: ${obj.count}`;
+                
+                return JSON.stringify(obj).substring(0, 50) + '...';
+            } catch (e) {
+                return String(details).substring(0, 50);
+            }
+        }
+
+        async function exportActivityLog() {
+            try {
+                // Get filtered activities
+                const userFilter = document.getElementById('userFilter').value;
+                const actionFilter = document.getElementById('actionFilter').value;
+                const entityFilter = document.getElementById('entityFilter').value;
+                const dateFrom = document.getElementById('dateFrom').value;
+
+                let filtered = allActivity.filter(activity => {
+                    const matchesUser = !userFilter || activity.user_id === userFilter;
+                    const matchesAction = !actionFilter || activity.action === actionFilter;
+                    const matchesEntity = !entityFilter || activity.entity_type === entityFilter;
+                    const matchesDate = !dateFrom || activity.created_at.substring(0, 10) >= dateFrom;
+
+                    return matchesUser && matchesAction && matchesEntity && matchesDate;
+                });
+
+                // Create CSV
+                let csv = 'Ημερομηνία,Ώρα,Χρήστης,Ενέργεια,Τύπος,Λεπτομέρειες\n';
+
+                filtered.forEach(activity => {
+                    const user = allUsers.find(u => u.id === activity.user_id);
+                    const userName = user ? user.full_name : 'Άγνωστος';
+                    const dateTime = new Date(activity.created_at);
+                    const date = dateTime.toLocaleDateString('el-GR');
+                    const time = dateTime.toLocaleTimeString('el-GR');
+                    const details = formatDetails(activity.details);
+
+                    csv += `"${date}","${time}","${userName}","${getActionText(activity.action)}","${getEntityText(activity.entity_type)}","${details}"\n`;
+                });
+
+                // Download
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `activity_log_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+
+                showToast('Το αρχείο μεταφορτώθηκε επιτυχώς!', 'success');
+
+            } catch (err) {
+                showToast('Σφάλμα εξαγωγής: ' + err.message, 'error');
+            }
+        }
+
+        window.onload = loadActivityLog;
+    </script>
+</body>
+</html>

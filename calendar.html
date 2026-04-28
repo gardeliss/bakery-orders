@@ -3,47 +3,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ημερολόγιο - Ζάχαρη</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Ημερολόγιο - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="modern-style.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container no-print">
-        <div class="banner">
-            <img src="banner.png" alt="Ζαχαροπλαστείο Ζάχαρη">
-        </div>
-        
-        <div class="nav">
-            <a href="index.html" class="nav-link">➕ Νέα Καταχώρηση</a>
-            <a href="admin.html" class="nav-link">🔍 Αναζήτηση</a>
-        </div>
+    <nav id="navbar" class="navbar"></nav>
 
-        <div class="report-controls">
-            <button onclick="printWeeklyList()" class="nav-link-btn">
-                🖨️ 📋 Λίστα Εβδομάδας
-            </button>
-            <button onclick="printWeeklyTable()" class="nav-link-btn">
-                🖨️ 📊 Πίνακας Εβδομάδας
-            </button>
-        </div>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📅 Ημερολόγιο Παραγγελιών</h2>
+            </div>
+            <div class="card-body">
+                <!-- Print Options -->
+                <div class="btn-group" style="margin-bottom: 20px;">
+                    <button onclick="printWeeklyList()" class="btn btn-primary">
+                        🖨️ Εβδομαδιαία Λίστα
+                    </button>
+                    <button onclick="printWeeklyTable()" class="btn btn-secondary">
+                        🖨️ Εβδομαδιαίος Πίνακας
+                    </button>
+                    <button onclick="printMonthly()" class="btn btn-outline">
+                        🖨️ Μηνιαίος Πίνακας
+                    </button>
+                </div>
 
-        <div id="calendar-container">
-            <div id="calendar"></div>
+                <!-- Calendar -->
+                <div id="calendar"></div>
+                
+                <p style="text-align:center; font-size:12px; color:#666; margin-top:15px;">
+                    💡 Κάντε κλικ σε μια παραγγελία για να την επεξεργαστείτε
+                </p>
+            </div>
         </div>
-        <p style="text-align:center; font-size:12px; color:#666; margin-top:10px;">💡 Σύρετε (swipe) αριστερά/δεξιά για αλλαγή μήνα</p>
     </div>
 
-    <!-- Περιοχή για την εκτύπωση -->
-    <div id="printArea" class="print-only"></div>
+    <div id="printArea"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-    <script src="script.js"></script>
+    <script src="app.js"></script>
     <script>
-        window.onload = async () => {
-            await fetchOrders();
-            initAdvancedCalendar();
-        };
+        Auth.requireAuth();
+
+        let allOrders = [];
+        let calendar;
+
+        async function fetchOrders() {
+            showLoading();
+
+            try {
+                const { data, error } = await _supabase
+                    .from('orders')
+                    .select('*')
+                    .order('delivery_date', { ascending: true });
+
+                if (error) throw error;
+
+                allOrders = data || [];
+                initCalendar();
+
+            } catch (err) {
+                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        function initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            
+            // Get status color
+            function getEventColor(status) {
+                const colors = {
+                    'pending': '#ffc107',
+                    'confirmed': '#17a2b8',
+                    'completed': '#28a745',
+                    'cancelled': '#dc3545'
+                };
+                return colors[status] || '#2a5a5a';
+            }
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'el',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                buttonText: {
+                    today: 'Σήμερα',
+                    month: 'Μήνας',
+                    week: 'Εβδομάδα',
+                    list: 'Λίστα'
+                },
+                height: 'auto',
+                events: allOrders.map(order => ({
+                    id: order.id,
+                    title: `${order.last_name} - ${order.location_type}`,
+                    start: order.delivery_date,
+                    backgroundColor: getEventColor(order.status),
+                    borderColor: getEventColor(order.status),
+                    extendedProps: {
+                        customer: `${order.last_name} ${order.first_name}`,
+                        phone: order.phone,
+                        description: order.description,
+                        price: order.total_price,
+                        status: order.status
+                    }
+                })),
+                eventClick: function(info) {
+                    window.location.href = `order-form.html?edit=${info.event.id}`;
+                },
+                eventDidMount: function(info) {
+                    // Add tooltip
+                    info.el.title = `${info.event.extendedProps.customer}\n${info.event.extendedProps.phone}\n${formatCurrency(info.event.extendedProps.price)}`;
+                }
+            });
+
+            calendar.render();
+        }
+
+        function getWeeklyData() {
+            const startStr = prompt("Εισάγετε ημερομηνία έναρξης (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+            if (!startStr) return null;
+            
+            const start = new Date(startStr);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 7);
+            
+            const filtered = allOrders.filter(o => {
+                const d = new Date(o.delivery_date);
+                return d >= start && d < end;
+            }).sort((a, b) => new Date(a.delivery_date) - new Date(b.delivery_date));
+            
+            return { filtered, startStr, endStr: end.toISOString().split('T')[0] };
+        }
+
+        function printWeeklyList() {
+            const data = getWeeklyData();
+            if (!data || data.filtered.length === 0) {
+                showToast('Δεν βρέθηκαν παραγγελίες για αυτή την περίοδο', 'info');
+                return;
+            }
+
+            let content = `
+                <h2 style="text-align:center; color:#2a5a5a; border-bottom:2px solid #2a5a5a; padding-bottom:10px;">
+                    📋 Εβδομαδιαίο Πλάνο Παραγγελιών
+                </h2>
+                <p style="text-align:center; color:#666; margin-bottom: 20px;">
+                    ${formatDate(data.startStr)} - ${formatDate(data.endStr)}
+                </p>
+            `;
+            
+            // Group by date
+            const grouped = {};
+            data.filtered.forEach(o => {
+                if (!grouped[o.delivery_date]) grouped[o.delivery_date] = [];
+                grouped[o.delivery_date].push(o);
+            });
+
+            // Display grouped
+            Object.keys(grouped).forEach(date => {
+                const dayName = getGreekDayName(date);
+                const formattedDate = formatDate(date);
+
+                content += `
+                    <div style="margin-top:20px; border:1px solid #eee; border-radius:8px; overflow:hidden; page-break-inside: avoid;">
+                        <h3 style="background:#2a5a5a; color:white; padding:12px; margin:0;">
+                            📅 ${dayName.toUpperCase()} - ${formattedDate}
+                        </h3>
+                        <div style="padding:15px; background: white;">`;
+                
+                grouped[date].forEach(o => {
+                    content += `
+                        <div style="margin:10px 0; padding:12px; border-left: 4px solid #2a5a5a; background: #f9f9f9;">
+                            <p style="margin:0; line-height:1.6;">
+                                <strong style="font-size: 1.1rem; color: #2a5a5a;">${o.last_name} ${o.first_name}</strong><br>
+                                📞 ${o.phone} | 📍 ${o.location_type}<br>
+                                ${o.description.substring(0, 200)}${o.description.length > 200 ? '...' : ''}<br>
+                                <strong>Σύνολο:</strong> ${formatCurrency(o.total_price)} | 
+                                <strong>Υπόλοιπο:</strong> ${formatCurrency(o.total_price - o.deposit)}
+                            </p>
+                        </div>`;
+                });
+
+                content += `</div></div>`;
+            });
+
+            renderAndPrint(content);
+            Auth.logActivity('print', 'order', null, { 
+                type: 'weekly_list',
+                date_range: `${data.startStr} - ${data.endStr}`,
+                count: data.filtered.length
+            });
+        }
+
+        function printWeeklyTable() {
+            const data = getWeeklyData();
+            if (!data || data.filtered.length === 0) {
+                showToast('Δεν βρέθηκαν παραγγελίες για αυτή την περίοδο', 'info');
+                return;
+            }
+
+            let content = `
+                <h2 style="text-align:center; color:#2a5a5a;">📊 Πίνακας Εβδομάδας</h2>
+                <p style="text-align:center; color:#666; margin-bottom: 20px;">
+                    ${formatDate(data.startStr)} - ${formatDate(data.endStr)}
+                </p>
+                <table border="1" style="width:100%; border-collapse:collapse; font-size:13px;">
+                    <thead>
+                        <tr style="background:#2a5a5a; color:white;">
+                            <th style="padding:12px;">Ημερομηνία</th>
+                            <th style="padding:12px;">Πελάτης</th>
+                            <th style="padding:12px;">Τηλέφωνο</th>
+                            <th style="padding:12px;">Περιγραφή</th>
+                            <th style="padding:12px;">Τοποθεσία</th>
+                            <th style="padding:12px;">Σύνολο</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.filtered.forEach((o, index) => {
+                const dayName = getGreekDayName(o.delivery_date);
+                const bgColor = index % 2 === 0 ? '#f9f9f9' : 'white';
+                
+                content += `
+                    <tr style="background: ${bgColor};">
+                        <td style="padding:10px;">${dayName} ${formatDate(o.delivery_date)}</td>
+                        <td style="padding:10px;"><strong>${o.last_name} ${o.first_name}</strong></td>
+                        <td style="padding:10px;">${o.phone}</td>
+                        <td style="padding:10px;">${o.description.substring(0, 100)}${o.description.length > 100 ? '...' : ''}</td>
+                        <td style="padding:10px;">${o.location_type}</td>
+                        <td style="padding:10px;"><strong>${formatCurrency(o.total_price)}</strong></td>
+                    </tr>`;
+            });
+
+            content += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:#2a5a5a; color:white; font-weight:bold;">
+                            <td colspan="5" style="padding:12px; text-align:right;">ΣΥΝΟΛΟ:</td>
+                            <td style="padding:12px;">${formatCurrency(data.filtered.reduce((sum, o) => sum + o.total_price, 0))}</td>
+                        </tr>
+                    </tfoot>
+                </table>`;
+
+            renderAndPrint(content);
+            Auth.logActivity('print', 'order', null, { 
+                type: 'weekly_table',
+                date_range: `${data.startStr} - ${data.endStr}`,
+                count: data.filtered.length
+            });
+        }
+
+        function printMonthly() {
+            const monthStr = prompt("Εισάγετε μήνα (YYYY-MM):", new Date().toISOString().substring(0, 7));
+            if (!monthStr) return;
+
+            const monthOrders = allOrders.filter(o => o.delivery_date.startsWith(monthStr));
+
+            if (monthOrders.length === 0) {
+                showToast('Δεν βρέθηκαν παραγγελίες για αυτόν τον μήνα', 'info');
+                return;
+            }
+
+            const monthDate = new Date(monthStr + '-01');
+            const monthName = monthDate.toLocaleDateString('el-GR', { month: 'long', year: 'numeric' });
+
+            let content = `
+                <h2 style="text-align:center; color:#2a5a5a;">📊 Μηνιαίος Πίνακας - ${monthName}</h2>
+                <table border="1" style="width:100%; border-collapse:collapse; font-size:12px; margin-top: 20px;">
+                    <thead>
+                        <tr style="background:#2a5a5a; color:white;">
+                            <th style="padding:10px;">Ημ/νία</th>
+                            <th style="padding:10px;">Πελάτης</th>
+                            <th style="padding:10px;">Τηλ.</th>
+                            <th style="padding:10px;">Περιγραφή</th>
+                            <th style="padding:10px;">Τοπ.</th>
+                            <th style="padding:10px;">Σύνολο</th>
+                            <th style="padding:10px;">Υπόλοιπο</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            monthOrders.forEach((o, index) => {
+                const bgColor = index % 2 === 0 ? '#f9f9f9' : 'white';
+                content += `
+                    <tr style="background: ${bgColor};">
+                        <td style="padding:8px;">${formatDate(o.delivery_date)}</td>
+                        <td style="padding:8px;"><strong>${o.last_name}</strong></td>
+                        <td style="padding:8px;">${o.phone}</td>
+                        <td style="padding:8px;">${o.description.substring(0, 80)}...</td>
+                        <td style="padding:8px;">${o.location_type}</td>
+                        <td style="padding:8px;"><strong>${formatCurrency(o.total_price)}</strong></td>
+                        <td style="padding:8px;">${formatCurrency(o.total_price - o.deposit)}</td>
+                    </tr>`;
+            });
+
+            const totalRevenue = monthOrders.reduce((sum, o) => sum + o.total_price, 0);
+            const totalRemaining = monthOrders.reduce((sum, o) => sum + (o.total_price - o.deposit), 0);
+
+            content += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:#2a5a5a; color:white; font-weight:bold;">
+                            <td colspan="5" style="padding:10px; text-align:right;">ΣΥΝΟΛΑ:</td>
+                            <td style="padding:10px;">${formatCurrency(totalRevenue)}</td>
+                            <td style="padding:10px;">${formatCurrency(totalRemaining)}</td>
+                        </tr>
+                        <tr style="background:#f9f9f9;">
+                            <td colspan="7" style="padding:10px; text-align:center;">
+                                <strong>Σύνολο Παραγγελιών:</strong> ${monthOrders.length}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>`;
+
+            renderAndPrint(content);
+            Auth.logActivity('print', 'order', null, { 
+                type: 'monthly_table',
+                month: monthStr,
+                count: monthOrders.length
+            });
+        }
+
+        window.onload = fetchOrders;
     </script>
 </body>
 </html>

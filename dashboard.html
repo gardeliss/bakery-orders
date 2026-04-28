@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="modern-style.css">
+</head>
+<body>
+    <nav id="navbar" class="navbar"></nav>
+
+    <div class="container">
+        <h1>📊 Dashboard</h1>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-grid" id="statsGrid">
+            <!-- Will be populated by JavaScript -->
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">⚡ Γρήγορες Ενέργειες</h2>
+            </div>
+            <div class="card-body">
+                <div class="btn-group">
+                    <a href="order-form.html" class="btn btn-primary">
+                        ➕ Νέα Παραγγελία
+                    </a>
+                    <a href="calendar.html" class="btn btn-secondary">
+                        📅 Ημερολόγιο
+                    </a>
+                    <a href="customers.html" class="btn btn-secondary">
+                        👥 Πελατολόγιο
+                    </a>
+                    <button onclick="printTodayOrders()" class="btn btn-outline">
+                        🖨️ Σημερινές Παραγγελίες
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Orders -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📅 Σημερινές Παραγγελίες</h2>
+                <span id="todayCount" class="badge badge-info">0</span>
+            </div>
+            <div class="card-body" id="todayOrders">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Upcoming Orders -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">🔜 Επόμενες Παραγγελίες (7 ημέρες)</h2>
+                <span id="upcomingCount" class="badge badge-warning">0</span>
+            </div>
+            <div class="card-body" id="upcomingOrders">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Top Customers -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">🌟 Top Πελάτες</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table class="table" id="topCustomersTable">
+                        <thead>
+                            <tr>
+                                <th>Πελάτης</th>
+                                <th>Παραγγελίες</th>
+                                <th>Σύνολο</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        // Protect page
+        Auth.requireAuth();
+
+        let allOrders = [];
+        let allCustomers = [];
+
+        async function loadDashboard() {
+            showLoading();
+            
+            try {
+                // Fetch orders
+                const { data: orders, error: ordersError } = await _supabase
+                    .from('orders')
+                    .select('*')
+                    .order('delivery_date', { ascending: true });
+
+                if (ordersError) throw ordersError;
+                allOrders = orders || [];
+
+                // Fetch customers
+                const { data: customers, error: customersError } = await _supabase
+                    .from('customers')
+                    .select('*')
+                    .order('total_spent', { ascending: false })
+                    .limit(5);
+
+                if (customersError) throw customersError;
+                allCustomers = customers || [];
+
+                renderStats();
+                renderTodayOrders();
+                renderUpcomingOrders();
+                renderTopCustomers();
+
+            } catch (err) {
+                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        function renderStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const thisMonth = today.substring(0, 7);
+
+            // Calculate statistics
+            const totalOrders = allOrders.length;
+            const todayOrders = allOrders.filter(o => o.delivery_date === today).length;
+            const monthOrders = allOrders.filter(o => o.delivery_date.startsWith(thisMonth)).length;
+            const totalRevenue = allOrders.reduce((sum, o) => sum + (parseFloat(o.total_price) || 0), 0);
+            const pendingOrders = allOrders.filter(o => o.status === 'pending').length;
+            const totalCustomers = allCustomers.length;
+
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-value">${totalOrders}</div>
+                    <div class="stat-label">Σύνολο Παραγγελιών</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-value">${todayOrders}</div>
+                    <div class="stat-label">Σήμερα</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value">${monthOrders}</div>
+                    <div class="stat-label">Αυτόν τον Μήνα</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value">${formatCurrency(totalRevenue)}</div>
+                    <div class="stat-label">Συνολικά Έσοδα</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-value">${pendingOrders}</div>
+                    <div class="stat-label">Σε Εκκρεμότητα</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value">${totalCustomers}</div>
+                    <div class="stat-label">Πελάτες</div>
+                </div>
+            `;
+        }
+
+        function renderTodayOrders() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayOrders = allOrders.filter(o => o.delivery_date === today);
+
+            document.getElementById('todayCount').textContent = todayOrders.length;
+
+            const container = document.getElementById('todayOrders');
+            
+            if (todayOrders.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color: #6c757d;">Δεν υπάρχουν παραγγελίες για σήμερα</p>';
+                return;
+            }
+
+            container.innerHTML = todayOrders.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <div class="order-customer">${order.last_name} ${order.first_name}</div>
+                            <div class="order-date">📞 ${order.phone} | ${order.location_type}</div>
+                        </div>
+                        <span class="badge badge-${order.status}">${getStatusText(order.status)}</span>
+                    </div>
+                    <div class="order-description">${order.description}</div>
+                    <div class="order-footer">
+                        <div class="order-price">${formatCurrency(order.total_price)}</div>
+                        <div class="order-actions">
+                            <a href="order-form.html?edit=${order.id}" class="btn btn-sm btn-secondary">📝 Επεξεργασία</a>
+                            <button onclick="printOrder('${order.id}')" class="btn btn-sm btn-outline">🖨️ Εκτύπωση</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderUpcomingOrders() {
+            const today = new Date();
+            const nextWeek = new Date();
+            nextWeek.setDate(today.getDate() + 7);
+
+            const todayStr = today.toISOString().split('T')[0];
+            const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+            const upcoming = allOrders.filter(o => 
+                o.delivery_date > todayStr && o.delivery_date <= nextWeekStr
+            );
+
+            document.getElementById('upcomingCount').textContent = upcoming.length;
+
+            const container = document.getElementById('upcomingOrders');
+            
+            if (upcoming.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color: #6c757d;">Δεν υπάρχουν επερχόμενες παραγγελίες</p>';
+                return;
+            }
+
+            container.innerHTML = upcoming.slice(0, 5).map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <div class="order-customer">${order.last_name} ${order.first_name}</div>
+                            <div class="order-date">📅 ${formatDate(order.delivery_date)} (${getGreekDayName(order.delivery_date)})</div>
+                        </div>
+                    </div>
+                    <div class="order-description">${order.description.substring(0, 100)}${order.description.length > 100 ? '...' : ''}</div>
+                    <div class="order-footer">
+                        <div class="order-price">${formatCurrency(order.total_price)}</div>
+                        <a href="order-form.html?edit=${order.id}" class="btn btn-sm btn-secondary">Προβολή</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTopCustomers() {
+            const tbody = document.querySelector('#topCustomersTable tbody');
+            
+            if (allCustomers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: #6c757d;">Δεν υπάρχουν δεδομένα</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allCustomers.map(customer => `
+                <tr>
+                    <td><strong>${customer.last_name} ${customer.first_name}</strong></td>
+                    <td>${customer.total_orders}</td>
+                    <td>${formatCurrency(customer.total_spent)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusText(status) {
+            const statuses = {
+                'pending': 'Εκκρεμεί',
+                'confirmed': 'Επιβεβαιωμένη',
+                'completed': 'Ολοκληρωμένη',
+                'cancelled': 'Ακυρωμένη'
+            };
+            return statuses[status] || status;
+        }
+
+        async function printOrder(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const html = `
+                <h2 style="text-align:center; border-bottom:2px solid #2a5a5a; padding-bottom: 10px;">
+                    ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ
+                </h2>
+                <p><strong>Πελάτης:</strong> ${order.last_name} ${order.first_name}</p>
+                <p><strong>Τηλέφωνο:</strong> ${order.phone}</p>
+                <p><strong>Ημερομηνία Παράδοσης:</strong> ${formatDate(order.delivery_date)} (${getGreekDayName(order.delivery_date)})</p>
+                <p><strong>Τοποθεσία:</strong> ${order.location_type}</p>
+                ${order.address ? `<p><strong>Διεύθυνση:</strong> ${order.address}</p>` : ''}
+                
+                <div style="border:1px solid #ccc; padding:15px; margin:20px 0; min-height:100px; background: #f9f9f9;">
+                    <strong>ΠΕΡΙΓΡΑΦΗ ΠΑΡΑΓΓΕΛΙΑΣ:</strong><br><br>
+                    ${order.description.replace(/\n/g, '<br>')}
+                </div>
+                
+                <div style="text-align:right; margin-top: 30px;">
+                    <p style="font-size: 1.1rem;"><strong>Σύνολο:</strong> ${formatCurrency(order.total_price)}</p>
+                    <p style="font-size: 1.1rem;"><strong>Προκαταβολή:</strong> ${formatCurrency(order.deposit)}</p>
+                    <h2 style="color:#2a5a5a; border-top: 2px solid #2a5a5a; padding-top: 10px; margin-top: 10px;">
+                        Υπόλοιπο: ${formatCurrency(order.total_price - order.deposit)}
+                    </h2>
+                </div>
+                
+                <div style="margin-top: 50px; text-align: center; font-size: 0.9rem; color: #666;">
+                    <p>Σας ευχαριστούμε για την προτίμησή σας!</p>
+                    <p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p>
+                </div>
+            `;
+
+            renderAndPrint(html);
+            
+            // Log activity
+            await Auth.logActivity('print', 'order', orderId, { type: 'single_order' });
+        }
+
+        async function printTodayOrders() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayOrders = allOrders.filter(o => o.delivery_date === today);
+
+            if (todayOrders.length === 0) {
+                showToast('Δεν υπάρχουν παραγγελίες για σήμερα', 'info');
+                return;
+            }
+
+            let html = `
+                <h2 style="text-align:center; color:#2a5a5a; border-bottom:2px solid #2a5a5a; padding-bottom:10px;">
+                    📋 Σημερινές Παραγγελίες - ${formatDate(today)}
+                </h2>
+            `;
+
+            todayOrders.forEach((order, index) => {
+                html += `
+                    <div style="margin-top:20px; border:1px solid #eee; border-radius:8px; padding:15px; page-break-inside: avoid;">
+                        <h3 style="color:#2a5a5a; margin: 0 0 10px 0;">${index + 1}. ${order.last_name} ${order.first_name}</h3>
+                        <p style="margin: 5px 0;"><strong>Τηλέφωνο:</strong> ${order.phone}</p>
+                        <p style="margin: 5px 0;"><strong>Τοποθεσία:</strong> ${order.location_type}</p>
+                        ${order.address ? `<p style="margin: 5px 0;"><strong>Διεύθυνση:</strong> ${order.address}</p>` : ''}
+                        <div style="background: #f9f9f9; padding: 10px; margin: 10px 0; border-left: 3px solid #2a5a5a;">
+                            <strong>Περιγραφή:</strong><br>
+                            ${order.description.replace(/\n/g, '<br>')}
+                        </div>
+                        <p style="text-align: right; font-size: 1.1rem; margin: 10px 0;">
+                            <strong>Σύνολο:</strong> ${formatCurrency(order.total_price)} | 
+                            <strong>Υπόλοιπο:</strong> ${formatCurrency(order.total_price - order.deposit)}
+                        </p>
+                    </div>
+                `;
+            });
+
+            renderAndPrint(html);
+            
+            // Log activity
+            await Auth.logActivity('print', 'order', null, { 
+                type: 'today_orders', 
+                count: todayOrders.length,
+                date: today
+            });
+        }
+
+        // Load dashboard on page load
+        window.onload = loadDashboard;
+    </script>
+</body>
+</html>

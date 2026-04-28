@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Παραγγελία - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="modern-style.css">
+</head>
+<body>
+    <nav id="navbar" class="navbar"></nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title" id="formTitle">🍰 Νέα Παραγγελία</h2>
+            </div>
+            <div class="card-body">
+                <form id="orderForm" onsubmit="handleSaveOrder(event)">
+                    <input type="hidden" id="orderId">
+                    <input type="hidden" id="customerId">
+
+                    <!-- Customer Search with Autocomplete -->
+                    <div class="form-group">
+                        <label class="form-label">🔍 Αναζήτηση Πελάτη (Προαιρετικό)</label>
+                        <div class="autocomplete-wrapper">
+                            <input 
+                                type="text" 
+                                id="customerSearch" 
+                                class="form-control" 
+                                placeholder="Πληκτρολογήστε όνομα ή τηλέφωνο..."
+                                autocomplete="off"
+                            >
+                            <div id="autocompleteResults" class="autocomplete-results hidden"></div>
+                        </div>
+                        <small style="color: #6c757d;">Αν ο πελάτης υπάρχει, τα στοιχεία θα συμπληρωθούν αυτόματα</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Όνομα *</label>
+                            <input type="text" id="firstName" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Επώνυμο *</label>
+                            <input type="text" id="lastName" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Τηλέφωνο *</label>
+                            <input type="tel" id="phone" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ημερομηνία Παράδοσης *</label>
+                            <input type="date" id="deliveryDate" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Περιγραφή Παραγγελίας *</label>
+                        <textarea id="description" class="form-control" rows="6" required placeholder="π.χ. Τούρτα γενεθλίων με σοκολάτα, 2 κιλά..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Τοποθεσία Παράδοσης</label>
+                            <select id="locationType" class="form-control">
+                                <option value="Σπίτι">Σπίτι</option>
+                                <option value="Παιδότοπος">Παιδότοπος</option>
+                                <option value="Κτήμα">Κτήμα</option>
+                                <option value="Εστιατόριο">Εστιατόριο</option>
+                                <option value="Γραφείο">Γραφείο</option>
+                                <option value="Άλλο">Άλλο</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Διεύθυνση</label>
+                            <input type="text" id="address" class="form-control" placeholder="Οδός, αριθμός, περιοχή">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Σύνολο (€)</label>
+                            <input type="number" id="totalPrice" class="form-control" step="0.01" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Προκαταβολή (€)</label>
+                            <input type="number" id="deposit" class="form-control" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Κατάσταση</label>
+                        <select id="status" class="form-control">
+                            <option value="pending">Εκκρεμεί</option>
+                            <option value="confirmed">Επιβεβαιωμένη</option>
+                            <option value="completed">Ολοκληρωμένη</option>
+                            <option value="cancelled">Ακυρωμένη</option>
+                        </select>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <strong>Υπόλοιπο προς πληρωμή:</strong>
+                        <span id="remainingAmount" style="font-size: 1.3rem; color: #2a5a5a; font-weight: bold;">0.00€</span>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            ✅ Αποθήκευση
+                        </button>
+                        <button type="button" id="printBtn" class="btn btn-secondary hidden" onclick="printCurrentOrder()">
+                            🖨️ Εκτύπωση
+                        </button>
+                        <a href="orders-list.html" class="btn btn-outline">
+                            ❌ Ακύρωση
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        Auth.requireAuth();
+
+        let allCustomers = [];
+        let currentOrder = null;
+
+        // Calculate remaining amount
+        document.getElementById('totalPrice').addEventListener('input', updateRemaining);
+        document.getElementById('deposit').addEventListener('input', updateRemaining);
+
+        function updateRemaining() {
+            const total = parseFloat(document.getElementById('totalPrice').value) || 0;
+            const deposit = parseFloat(document.getElementById('deposit').value) || 0;
+            const remaining = total - deposit;
+            document.getElementById('remainingAmount').textContent = remaining.toFixed(2) + '€';
+        }
+
+        // Customer autocomplete
+        document.getElementById('customerSearch').addEventListener('input', debounce(async function(e) {
+            const searchTerm = e.target.value.trim().toLowerCase();
+            
+            if (searchTerm.length < 2) {
+                document.getElementById('autocompleteResults').classList.add('hidden');
+                return;
+            }
+
+            // Fetch customers if not loaded
+            if (allCustomers.length === 0) {
+                const { data } = await _supabase.from('customers').select('*');
+                allCustomers = data || [];
+            }
+
+            // Filter customers
+            const filtered = allCustomers.filter(c => 
+                c.first_name.toLowerCase().includes(searchTerm) ||
+                c.last_name.toLowerCase().includes(searchTerm) ||
+                c.phone.includes(searchTerm)
+            );
+
+            displayAutocompleteResults(filtered);
+        }, 300));
+
+        function displayAutocompleteResults(customers) {
+            const resultsDiv = document.getElementById('autocompleteResults');
+            
+            if (customers.length === 0) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+
+            resultsDiv.innerHTML = customers.slice(0, 5).map(c => `
+                <div class="autocomplete-item" onclick="selectCustomer('${c.id}')">
+                    <strong>${c.last_name} ${c.first_name}</strong><br>
+                    <small>📞 ${c.phone}</small>
+                </div>
+            `).join('');
+
+            resultsDiv.classList.remove('hidden');
+        }
+
+        async function selectCustomer(customerId) {
+            const customer = allCustomers.find(c => c.id === customerId);
+            if (!customer) return;
+
+            // Fill form with customer data
+            document.getElementById('customerId').value = customer.id;
+            document.getElementById('firstName').value = customer.first_name;
+            document.getElementById('lastName').value = customer.last_name;
+            document.getElementById('phone').value = customer.phone;
+            document.getElementById('address').value = customer.address || '';
+            document.getElementById('customerSearch').value = `${customer.last_name} ${customer.first_name}`;
+
+            // Hide autocomplete
+            document.getElementById('autocompleteResults').classList.add('hidden');
+
+            showToast(`Επιλέχθηκε: ${customer.last_name} ${customer.first_name}`, 'success');
+        }
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.autocomplete-wrapper')) {
+                document.getElementById('autocompleteResults').classList.add('hidden');
+            }
+        });
+
+        async function handleSaveOrder(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner spinner-sm"></div> Αποθήκευση...';
+
+            const orderId = document.getElementById('orderId').value;
+            const customerId = document.getElementById('customerId').value;
+
+            const orderData = {
+                customer_id: customerId || null,
+                first_name: document.getElementById('firstName').value.trim(),
+                last_name: document.getElementById('lastName').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                delivery_date: document.getElementById('deliveryDate').value,
+                location_type: document.getElementById('locationType').value,
+                address: document.getElementById('address').value.trim(),
+                total_price: parseFloat(document.getElementById('totalPrice').value) || 0,
+                deposit: parseFloat(document.getElementById('deposit').value) || 0,
+                status: document.getElementById('status').value,
+                created_by: Auth.getCurrentUser().id,
+                updated_at: new Date().toISOString()
+            };
+
+            try {
+                if (orderId) {
+                    // Update existing order
+                    const { data, error } = await _supabase
+                        .from('orders')
+                        .update(orderData)
+                        .eq('id', orderId)
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    await Auth.logActivity('update', 'order', orderId, { order: orderData });
+                    showToast('Η παραγγελία ενημερώθηκε επιτυχώς!', 'success');
+                    
+                    currentOrder = data;
+
+                } else {
+                    // Create new order
+                    orderData.created_at = new Date().toISOString();
+                    
+                    const { data, error } = await _supabase
+                        .from('orders')
+                        .insert([orderData])
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    await Auth.logActivity('create', 'order', data.id, { order: orderData });
+                    showToast('Η παραγγελία αποθηκεύτηκε επιτυχώς!', 'success');
+                    
+                    currentOrder = data;
+                    document.getElementById('orderId').value = data.id;
+                    document.getElementById('formTitle').textContent = '📝 Επεξεργασία Παραγγελίας';
+                    document.getElementById('printBtn').classList.remove('hidden');
+                }
+
+                // Update or create customer
+                await updateCustomerRecord(orderData);
+
+            } catch (err) {
+                showToast('Σφάλμα: ' + err.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '✅ Αποθήκευση';
+        }
+
+        async function updateCustomerRecord(orderData) {
+            try {
+                // Check if customer exists by phone
+                const { data: existing } = await _supabase
+                    .from('customers')
+                    .select('*')
+                    .eq('phone', orderData.phone)
+                    .single();
+
+                if (existing) {
+                    // Update existing customer
+                    const { data: orders } = await _supabase
+                        .from('orders')
+                        .select('total_price')
+                        .eq('phone', orderData.phone);
+
+                    const totalOrders = orders.length;
+                    const totalSpent = orders.reduce((sum, o) => sum + (parseFloat(o.total_price) || 0), 0);
+
+                    await _supabase
+                        .from('customers')
+                        .update({
+                            first_name: orderData.first_name,
+                            last_name: orderData.last_name,
+                            address: orderData.address,
+                            total_orders: totalOrders,
+                            total_spent: totalSpent,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', existing.id);
+
+                } else {
+                    // Create new customer
+                    await _supabase
+                        .from('customers')
+                        .insert([{
+                            first_name: orderData.first_name,
+                            last_name: orderData.last_name,
+                            phone: orderData.phone,
+                            address: orderData.address,
+                            total_orders: 1,
+                            total_spent: orderData.total_price
+                        }]);
+                }
+            } catch (err) {
+                console.error('Error updating customer:', err);
+            }
+        }
+
+        async function loadOrderToEdit(id) {
+            showLoading();
+
+            try {
+                const { data, error } = await _supabase
+                    .from('orders')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                currentOrder = data;
+
+                // Fill form
+                document.getElementById('orderId').value = data.id;
+                document.getElementById('customerId').value = data.customer_id || '';
+                document.getElementById('firstName').value = data.first_name;
+                document.getElementById('lastName').value = data.last_name;
+                document.getElementById('phone').value = data.phone;
+                document.getElementById('description').value = data.description;
+                document.getElementById('deliveryDate').value = data.delivery_date;
+                document.getElementById('locationType').value = data.location_type;
+                document.getElementById('address').value = data.address || '';
+                document.getElementById('totalPrice').value = data.total_price;
+                document.getElementById('deposit').value = data.deposit;
+                document.getElementById('status').value = data.status || 'pending';
+
+                updateRemaining();
+
+                document.getElementById('formTitle').textContent = '📝 Επεξεργασία Παραγγελίας';
+                document.getElementById('printBtn').classList.remove('hidden');
+
+            } catch (err) {
+                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        function printCurrentOrder() {
+            if (!currentOrder) {
+                showToast('Αποθηκεύστε πρώτα την παραγγελία', 'warning');
+                return;
+            }
+
+            const order = currentOrder;
+            const html = `
+                <h2 style="text-align:center; border-bottom:2px solid #2a5a5a; padding-bottom: 10px;">
+                    ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ
+                </h2>
+                <p><strong>Πελάτης:</strong> ${order.last_name} ${order.first_name}</p>
+                <p><strong>Τηλέφωνο:</strong> ${order.phone}</p>
+                <p><strong>Ημερομηνία Παράδοσης:</strong> ${formatDate(order.delivery_date)} (${getGreekDayName(order.delivery_date)})</p>
+                <p><strong>Τοποθεσία:</strong> ${order.location_type}</p>
+                ${order.address ? `<p><strong>Διεύθυνση:</strong> ${order.address}</p>` : ''}
+                
+                <div style="border:1px solid #ccc; padding:15px; margin:20px 0; min-height:100px; background: #f9f9f9;">
+                    <strong>ΠΕΡΙΓΡΑΦΗ ΠΑΡΑΓΓΕΛΙΑΣ:</strong><br><br>
+                    ${order.description.replace(/\n/g, '<br>')}
+                </div>
+                
+                <div style="text-align:right; margin-top: 30px;">
+                    <p style="font-size: 1.1rem;"><strong>Σύνολο:</strong> ${formatCurrency(order.total_price)}</p>
+                    <p style="font-size: 1.1rem;"><strong>Προκαταβολή:</strong> ${formatCurrency(order.deposit)}</p>
+                    <h2 style="color:#2a5a5a; border-top: 2px solid #2a5a5a; padding-top: 10px; margin-top: 10px;">
+                        Υπόλοιπο: ${formatCurrency(order.total_price - order.deposit)}
+                    </h2>
+                </div>
+                
+                <div style="margin-top: 50px; text-align: center; font-size: 0.9rem; color: #666;">
+                    <p>Σας ευχαριστούμε για την προτίμησή σας!</p>
+                    <p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p>
+                </div>
+            `;
+
+            renderAndPrint(html);
+            Auth.logActivity('print', 'order', order.id, { type: 'single_order' });
+        }
+
+        // Check for edit parameter in URL
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            const editId = params.get('edit');
+            
+            if (editId) {
+                loadOrderToEdit(editId);
+            } else {
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('deliveryDate').value = today;
+            }
+        };
+    </script>
+</body>
+</html>
