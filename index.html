@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Σύνδεση - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="modern-style.css">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="banner.png" alt="Ζάχαρη Logo" class="logo-login">
+                <h1 class="login-title">Καλώς ήρθατε</h1>
+                <p class="login-subtitle">Σύστημα Διαχείρισης Παραγγελιών</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">📧 Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        class="form-control" 
+                        placeholder="admin@zachari.gr"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">🔒 Κωδικός</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="form-control" 
+                        placeholder="Εισάγετε τον κωδικό σας"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+                    🔑 Σύνδεση
+                </button>
+            </form>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; text-align: center;">
+                <p style="color: #6c757d; font-size: 0.85rem; margin-bottom: 10px;">
+                    <strong>Demo Credentials:</strong>
+                </p>
+                <p style="color: #6c757d; font-size: 0.8rem; margin: 5px 0;">
+                    👤 Admin: admin@zachari.gr / admin123
+                </p>
+                <p style="color: #6c757d; font-size: 0.8rem; margin: 5px 0;">
+                    👤 User: user@zachari.gr / user123
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (Auth.isAuthenticated()) {
+            window.location.href = 'dashboard.html';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner spinner-sm"></div> Σύνδεση...';
+
+            await Auth.login(email, password);
+
+            btn.disabled = false;
+            btn.innerHTML = '🔑 Σύνδεση';
+        }
+
+        // Auto-fill demo credentials on demo button click (optional)
+        document.addEventListener('DOMContentLoaded', () => {
+            const demoButtons = document.querySelectorAll('[style*="Demo Credentials"]');
+            // You can add click handlers to auto-fill credentials if desired
+        });
+    </script>
+</body>
+</html>
