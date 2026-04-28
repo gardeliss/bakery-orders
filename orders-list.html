@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Παραγγελίες - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="modern-style.css">
+</head>
+<body>
+    <nav id="navbar" class="navbar"></nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📋 Λίστα Παραγγελιών</h2>
+                <a href="order-form.html" class="btn btn-primary">➕ Νέα Παραγγελία</a>
+            </div>
+            <div class="card-body">
+                <!-- Search and Filters -->
+                <div class="search-bar">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="🔍 Αναζήτηση με όνομα, επώνυμο ή τηλέφωνο..."
+                        onkeyup="filterOrders()"
+                    >
+                    <span class="search-icon">🔍</span>
+                </div>
+
+                <!-- Filter Options -->
+                <div class="form-row" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label class="form-label">Κατάσταση</label>
+                        <select id="statusFilter" class="form-control" onchange="filterOrders()">
+                            <option value="">Όλες</option>
+                            <option value="pending">Εκκρεμεί</option>
+                            <option value="confirmed">Επιβεβαιωμένη</option>
+                            <option value="completed">Ολοκληρωμένη</option>
+                            <option value="cancelled">Ακυρωμένη</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ταξινόμηση</label>
+                        <select id="sortOrder" class="form-control" onchange="filterOrders()">
+                            <option value="date_asc">Ημερομηνία (Αύξουσα)</option>
+                            <option value="date_desc">Ημερομηνία (Φθίνουσα)</option>
+                            <option value="name_asc">Όνομα (Α-Ω)</option>
+                            <option value="name_desc">Όνομα (Ω-Α)</option>
+                            <option value="price_desc">Τιμή (Υψηλή-Χαμηλή)</option>
+                            <option value="price_asc">Τιμή (Χαμηλή-Υψηλή)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Από Ημερομηνία</label>
+                        <input type="date" id="dateFrom" class="form-control" onchange="filterOrders()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Έως Ημερομηνία</label>
+                        <input type="date" id="dateTo" class="form-control" onchange="filterOrders()">
+                    </div>
+                </div>
+
+                <!-- Results Count -->
+                <div style="margin-bottom: 15px; color: #6c757d;">
+                    <span id="resultsCount">0</span> παραγγελίες
+                </div>
+
+                <!-- Orders List -->
+                <div id="ordersList">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        Auth.requireAuth();
+
+        let allOrders = [];
+
+        async function fetchOrders() {
+            showLoading();
+
+            try {
+                const { data, error } = await _supabase
+                    .from('orders')
+                    .select('*')
+                    .order('delivery_date', { ascending: true });
+
+                if (error) throw error;
+
+                allOrders = data || [];
+                filterOrders();
+
+            } catch (err) {
+                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        function filterOrders() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const sortOrder = document.getElementById('sortOrder').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            let filtered = allOrders.filter(order => {
+                // Search filter
+                const matchesSearch = 
+                    order.first_name.toLowerCase().includes(searchTerm) ||
+                    order.last_name.toLowerCase().includes(searchTerm) ||
+                    order.phone.includes(searchTerm) ||
+                    order.description.toLowerCase().includes(searchTerm);
+
+                // Status filter
+                const matchesStatus = !statusFilter || order.status === statusFilter;
+
+                // Date range filter
+                const matchesDateFrom = !dateFrom || order.delivery_date >= dateFrom;
+                const matchesDateTo = !dateTo || order.delivery_date <= dateTo;
+
+                return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
+            });
+
+            // Sort
+            filtered.sort((a, b) => {
+                switch (sortOrder) {
+                    case 'date_asc':
+                        return new Date(a.delivery_date) - new Date(b.delivery_date);
+                    case 'date_desc':
+                        return new Date(b.delivery_date) - new Date(a.delivery_date);
+                    case 'name_asc':
+                        return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name);
+                    case 'name_desc':
+                        return (b.last_name + b.first_name).localeCompare(a.last_name + a.first_name);
+                    case 'price_desc':
+                        return b.total_price - a.total_price;
+                    case 'price_asc':
+                        return a.total_price - b.total_price;
+                    default:
+                        return 0;
+                }
+            });
+
+            displayOrders(filtered);
+        }
+
+        function displayOrders(orders) {
+            const list = document.getElementById('ordersList');
+            const count = document.getElementById('resultsCount');
+
+            count.textContent = orders.length;
+
+            if (orders.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color: #6c757d; padding: 40px;">Δεν βρέθηκαν παραγγελίες</p>';
+                return;
+            }
+
+            list.innerHTML = orders.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <div class="order-customer">${order.last_name} ${order.first_name}</div>
+                            <div class="order-date">
+                                📅 ${formatDate(order.delivery_date)} (${getGreekDayName(order.delivery_date)}) | 
+                                📞 ${order.phone} | 
+                                📍 ${order.location_type}
+                            </div>
+                        </div>
+                        <span class="badge badge-${order.status}">${getStatusText(order.status)}</span>
+                    </div>
+                    <div class="order-description">
+                        ${order.description.length > 150 ? order.description.substring(0, 150) + '...' : order.description}
+                    </div>
+                    <div class="order-footer">
+                        <div>
+                            <div class="order-price">${formatCurrency(order.total_price)}</div>
+                            <small style="color: #6c757d;">
+                                Προκαταβολή: ${formatCurrency(order.deposit)} | 
+                                Υπόλοιπο: ${formatCurrency(order.total_price - order.deposit)}
+                            </small>
+                        </div>
+                        <div class="order-actions">
+                            <a href="order-form.html?edit=${order.id}" class="btn btn-sm btn-secondary" title="Επεξεργασία">
+                                📝
+                            </a>
+                            <button onclick="printOrder('${order.id}')" class="btn btn-sm btn-outline" title="Εκτύπωση">
+                                🖨️
+                            </button>
+                            <button onclick="deleteOrder('${order.id}')" class="btn btn-sm btn-danger" title="Διαγραφή">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusText(status) {
+            const statuses = {
+                'pending': 'Εκκρεμεί',
+                'confirmed': 'Επιβεβαιωμένη',
+                'completed': 'Ολοκληρωμένη',
+                'cancelled': 'Ακυρωμένη'
+            };
+            return statuses[status] || status;
+        }
+
+        async function deleteOrder(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            confirmDialog(
+                `Είστε σίγουροι ότι θέλετε να διαγράψετε την παραγγελία του/της ${order.last_name} ${order.first_name};`,
+                async () => {
+                    showLoading();
+
+                    try {
+                        const { error } = await _supabase
+                            .from('orders')
+                            .delete()
+                            .eq('id', orderId);
+
+                        if (error) throw error;
+
+                        await Auth.logActivity('delete', 'order', orderId, { 
+                            customer: `${order.last_name} ${order.first_name}`,
+                            delivery_date: order.delivery_date
+                        });
+
+                        showToast('Η παραγγελία διαγράφηκε επιτυχώς', 'success');
+                        fetchOrders();
+
+                    } catch (err) {
+                        showToast('Σφάλμα διαγραφής: ' + err.message, 'error');
+                    }
+
+                    hideLoading();
+                }
+            );
+        }
+
+        async function printOrder(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const html = `
+                <h2 style="text-align:center; border-bottom:2px solid #2a5a5a; padding-bottom: 10px;">
+                    ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ
+                </h2>
+                <p><strong>Πελάτης:</strong> ${order.last_name} ${order.first_name}</p>
+                <p><strong>Τηλέφωνο:</strong> ${order.phone}</p>
+                <p><strong>Ημερομηνία Παράδοσης:</strong> ${formatDate(order.delivery_date)} (${getGreekDayName(order.delivery_date)})</p>
+                <p><strong>Τοποθεσία:</strong> ${order.location_type}</p>
+                ${order.address ? `<p><strong>Διεύθυνση:</strong> ${order.address}</p>` : ''}
+                
+                <div style="border:1px solid #ccc; padding:15px; margin:20px 0; min-height:100px; background: #f9f9f9;">
+                    <strong>ΠΕΡΙΓΡΑΦΗ ΠΑΡΑΓΓΕΛΙΑΣ:</strong><br><br>
+                    ${order.description.replace(/\n/g, '<br>')}
+                </div>
+                
+                <div style="text-align:right; margin-top: 30px;">
+                    <p style="font-size: 1.1rem;"><strong>Σύνολο:</strong> ${formatCurrency(order.total_price)}</p>
+                    <p style="font-size: 1.1rem;"><strong>Προκαταβολή:</strong> ${formatCurrency(order.deposit)}</p>
+                    <h2 style="color:#2a5a5a; border-top: 2px solid #2a5a5a; padding-top: 10px; margin-top: 10px;">
+                        Υπόλοιπο: ${formatCurrency(order.total_price - order.deposit)}
+                    </h2>
+                </div>
+                
+                <div style="margin-top: 50px; text-align: center; font-size: 0.9rem; color: #666;">
+                    <p>Σας ευχαριστούμε για την προτίμησή σας!</p>
+                    <p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p>
+                </div>
+            `;
+
+            renderAndPrint(html);
+            await Auth.logActivity('print', 'order', orderId, { type: 'single_order' });
+        }
+
+        window.onload = fetchOrders;
+    </script>
+</body>
+</html>
