@@ -10,17 +10,12 @@
     <nav id="navbar" class="navbar"></nav>
 
     <div class="container">
-        <!-- Customer Info Card -->
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title" id="customerName">👤 Προφίλ Πελάτη</h2>
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="editCustomerInfo()" class="btn btn-secondary">
-                        📝 Επεξεργασία
-                    </button>
-                    <a href="customers.html" class="btn btn-outline">
-                        ← Πίσω
-                    </a>
+                    <button onclick="editCustomerInfo()" class="btn btn-secondary">📝 Επεξεργασία</button>
+                    <a href="customers.html" class="btn btn-outline">← Πίσω</a>
                 </div>
             </div>
             <div class="card-body">
@@ -51,7 +46,6 @@
             </div>
         </div>
 
-        <!-- Statistics Cards -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">📦</div>
@@ -75,17 +69,12 @@
             </div>
         </div>
 
-        <!-- Order History -->
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">📋 Ιστορικό Παραγγελιών</h2>
-                <button onclick="printCustomerReport()" class="btn btn-primary">
-                    🖨️ Εκτύπωση Αναφοράς
-                </button>
+                <button onclick="printCustomerReport()" class="btn btn-primary">🖨️ Εκτύπωση Αναφοράς</button>
             </div>
-            <div class="card-body" id="orderHistory">
-                <!-- Will be populated by JavaScript -->
-            </div>
+            <div class="card-body" id="orderHistory"></div>
         </div>
     </div>
 
@@ -112,23 +101,11 @@
             showLoading();
 
             try {
-                // Fetch customer
-                const { data: customer, error: customerError } = await _supabase
-                    .from('customers')
-                    .select('*')
-                    .eq('id', customerId)
-                    .single();
-
+                const { data: customer, error: customerError } = await _supabase.from('customers').select('*').eq('id', customerId).single();
                 if (customerError) throw customerError;
                 currentCustomer = customer;
 
-                // Fetch customer orders
-                const { data: orders, error: ordersError } = await _supabase
-                    .from('orders')
-                    .select('*')
-                    .eq('phone', customer.phone)
-                    .order('delivery_date', { ascending: false });
-
+                const { data: orders, error: ordersError } = await _supabase.from('orders').select('*').eq('phone', customer.phone).order('delivery_date', { ascending: false });
                 if (ordersError) throw ordersError;
                 customerOrders = orders || [];
 
@@ -144,8 +121,8 @@
         }
 
         function displayCustomerInfo() {
-            document.getElementById('customerName').textContent = `👤 ${currentCustomer.last_name} ${currentCustomer.first_name}`;
-            document.getElementById('customerFullName').textContent = `${currentCustomer.last_name} ${currentCustomer.first_name}`;
+            document.getElementById('customerName').textContent = '👤 ' + currentCustomer.last_name + ' ' + currentCustomer.first_name;
+            document.getElementById('customerFullName').textContent = currentCustomer.last_name + ' ' + currentCustomer.first_name;
             document.getElementById('customerPhone').textContent = currentCustomer.phone;
             document.getElementById('customerEmail').textContent = currentCustomer.email || '-';
             document.getElementById('customerAddress').textContent = currentCustomer.address || '-';
@@ -176,95 +153,71 @@
                 return;
             }
 
-            container.innerHTML = customerOrders.map(order => `
-                <div class="order-card">
-                    <div class="order-header">
-                        <div>
-                            <div class="order-date">
-                                📅 ${formatDate(order.delivery_date)} (${getGreekDayName(order.delivery_date)})
-                            </div>
-                            <div style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;">
-                                📍 ${order.location_type}
-                                ${order.address ? ` - ${order.address}` : ''}
-                            </div>
-                        </div>
-                        <span class="badge badge-${order.status}">${getStatusText(order.status)}</span>
-                    </div>
-                    <div class="order-description">${order.description}</div>
-                    <div class="order-footer">
-                        <div>
-                            <div class="order-price">${formatCurrency(order.total_price)}</div>
-                            <small style="color: #6c757d;">
-                                Προκαταβολή: ${formatCurrency(order.deposit)} | 
-                                Υπόλοιπο: ${formatCurrency(order.total_price - order.deposit)}
-                            </small>
-                        </div>
-                        <div class="order-actions">
-                            <a href="order-form.html?edit=${order.id}" class="btn btn-sm btn-secondary">
-                                📝 Επεξεργασία
-                            </a>
-                            <button onclick="printOrder('${order.id}')" class="btn btn-sm btn-outline">
-                                🖨️ Εκτύπωση
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+            container.innerHTML = '';
+
+            customerOrders.forEach(order => {
+                const orderCard = document.createElement('div');
+                orderCard.className = 'order-card';
+                orderCard.innerHTML = 
+                    '<div class="order-header">' +
+                        '<div>' +
+                            '<div class="order-date">📅 ' + formatDate(order.delivery_date) + ' (' + getGreekDayName(order.delivery_date) + ')</div>' +
+                            '<div style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;">📍 ' + order.location_type + (order.address ? ' - ' + order.address : '') + '</div>' +
+                        '</div>' +
+                        '<span class="badge badge-' + order.status + '">' + getStatusText(order.status) + '</span>' +
+                    '</div>' +
+                    '<div class="order-description">' + order.description + '</div>' +
+                    '<div class="order-footer">' +
+                        '<div>' +
+                            '<div class="order-price">' + formatCurrency(order.total_price) + '</div>' +
+                            '<small style="color: #6c757d;">Προκαταβολή: ' + formatCurrency(order.deposit) + ' | Υπόλοιπο: ' + formatCurrency(order.total_price - order.deposit) + '</small>' +
+                        '</div>' +
+                        '<div class="order-actions"></div>' +
+                    '</div>';
+
+                const editBtn = document.createElement('a');
+                editBtn.href = 'order-form.html?edit=' + order.id;
+                editBtn.className = 'btn btn-sm btn-secondary';
+                editBtn.textContent = '📝 Επεξεργασία';
+
+                const printBtn = document.createElement('button');
+                printBtn.className = 'btn btn-sm btn-outline';
+                printBtn.textContent = '🖨️ Εκτύπωση';
+                printBtn.addEventListener('click', function() {
+                    printOrder(order.id);
+                });
+
+                const actionsDiv = orderCard.querySelector('.order-actions');
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(printBtn);
+
+                container.appendChild(orderCard);
+            });
         }
 
         function getStatusText(status) {
-            const statuses = {
-                'pending': 'Εκκρεμεί',
-                'confirmed': 'Επιβεβαιωμένη',
-                'completed': 'Ολοκληρωμένη',
-                'cancelled': 'Ακυρωμένη'
-            };
+            const statuses = {'pending': 'Εκκρεμεί', 'confirmed': 'Επιβεβαιωμένη', 'completed': 'Ολοκληρωμένη', 'cancelled': 'Ακυρωμένη'};
             return statuses[status] || status;
         }
 
         function editCustomerInfo() {
-            const modalContent = `
-                <form id="editCustomerForm" onsubmit="saveCustomerInfo(event)">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Όνομα</label>
-                            <input type="text" id="editFirstName" class="form-control" value="${currentCustomer.first_name}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Επώνυμο</label>
-                            <input type="text" id="editLastName" class="form-control" value="${currentCustomer.last_name}" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Τηλέφωνο</label>
-                            <input type="tel" id="editPhone" class="form-control" value="${currentCustomer.phone}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="editEmail" class="form-control" value="${currentCustomer.email || ''}">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Διεύθυνση</label>
-                        <input type="text" id="editAddress" class="form-control" value="${currentCustomer.address || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Σημειώσεις</label>
-                        <textarea id="editNotes" class="form-control" rows="3">${currentCustomer.notes || ''}</textarea>
-                    </div>
-                </form>
-            `;
+            const modalContent = '<form id="editCustomerForm" onsubmit="saveCustomerInfo(event)">' +
+                '<div class="form-row"><div class="form-group"><label class="form-label">Όνομα</label>' +
+                '<input type="text" id="editFirstName" class="form-control" value="' + currentCustomer.first_name + '" required></div>' +
+                '<div class="form-group"><label class="form-label">Επώνυμο</label>' +
+                '<input type="text" id="editLastName" class="form-control" value="' + currentCustomer.last_name + '" required></div></div>' +
+                '<div class="form-row"><div class="form-group"><label class="form-label">Τηλέφωνο</label>' +
+                '<input type="tel" id="editPhone" class="form-control" value="' + currentCustomer.phone + '" required></div>' +
+                '<div class="form-group"><label class="form-label">Email</label>' +
+                '<input type="email" id="editEmail" class="form-control" value="' + (currentCustomer.email || '') + '"></div></div>' +
+                '<div class="form-group"><label class="form-label">Διεύθυνση</label>' +
+                '<input type="text" id="editAddress" class="form-control" value="' + (currentCustomer.address || '') + '"></div>' +
+                '<div class="form-group"><label class="form-label">Σημειώσεις</label>' +
+                '<textarea id="editNotes" class="form-control" rows="3">' + (currentCustomer.notes || '') + '</textarea></div></form>';
 
             showModal('📝 Επεξεργασία Στοιχείων', modalContent, [
-                { text: 'Ακύρωση', class: 'btn-secondary' },
-                { 
-                    text: 'Αποθήκευση', 
-                    class: 'btn-primary',
-                    onClick: () => {
-                        document.getElementById('editCustomerForm').requestSubmit();
-                    }
-                }
+                {text: 'Ακύρωση', class: 'btn-secondary'},
+                {text: 'Αποθήκευση', class: 'btn-primary', onClick: () => { document.getElementById('editCustomerForm').requestSubmit(); }}
             ]);
         }
 
@@ -283,19 +236,11 @@
             };
 
             try {
-                const { error } = await _supabase
-                    .from('customers')
-                    .update(customerData)
-                    .eq('id', currentCustomer.id);
-
+                const { error } = await _supabase.from('customers').update(customerData).eq('id', currentCustomer.id);
                 if (error) throw error;
-
                 await Auth.logActivity('update', 'customer', currentCustomer.id, { customer: customerData });
                 showToast('Τα στοιχεία ενημερώθηκαν επιτυχώς!', 'success');
-                
-                // Reload profile
                 loadCustomerProfile();
-
             } catch (err) {
                 showToast('Σφάλμα: ' + err.message, 'error');
             }
@@ -303,41 +248,26 @@
             hideLoading();
         }
 
-        async function printOrder(orderId) {
+        function printOrder(orderId) {
             const order = customerOrders.find(o => o.id === orderId);
             if (!order) return;
 
-            const html = `
-                <h2 style="text-align:center; border-bottom:2px solid #2a5a5a; padding-bottom: 10px;">
-                    ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ
-                </h2>
-                <p><strong>Πελάτης:</strong> ${order.last_name} ${order.first_name}</p>
-                <p><strong>Τηλέφωνο:</strong> ${order.phone}</p>
-                <p><strong>Ημερομηνία Παράδοσης:</strong> ${formatDate(order.delivery_date)} (${getGreekDayName(order.delivery_date)})</p>
-                <p><strong>Τοποθεσία:</strong> ${order.location_type}</p>
-                ${order.address ? `<p><strong>Διεύθυνση:</strong> ${order.address}</p>` : ''}
-                
-                <div style="border:1px solid #ccc; padding:15px; margin:20px 0; min-height:100px; background: #f9f9f9;">
-                    <strong>ΠΕΡΙΓΡΑΦΗ ΠΑΡΑΓΓΕΛΙΑΣ:</strong><br><br>
-                    ${order.description.replace(/\n/g, '<br>')}
-                </div>
-                
-                <div style="text-align:right; margin-top: 30px;">
-                    <p style="font-size: 1.1rem;"><strong>Σύνολο:</strong> ${formatCurrency(order.total_price)}</p>
-                    <p style="font-size: 1.1rem;"><strong>Προκαταβολή:</strong> ${formatCurrency(order.deposit)}</p>
-                    <h2 style="color:#2a5a5a; border-top: 2px solid #2a5a5a; padding-top: 10px; margin-top: 10px;">
-                        Υπόλοιπο: ${formatCurrency(order.total_price - order.deposit)}
-                    </h2>
-                </div>
-                
-                <div style="margin-top: 50px; text-align: center; font-size: 0.9rem; color: #666;">
-                    <p>Σας ευχαριστούμε για την προτίμησή σας!</p>
-                    <p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p>
-                </div>
-            `;
+            const html = '<h2 style="text-align:center; border-bottom:2px solid #2a5a5a; padding-bottom: 10px;">ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ</h2>' +
+                '<p><strong>Πελάτης:</strong> ' + order.last_name + ' ' + order.first_name + '</p>' +
+                '<p><strong>Τηλέφωνο:</strong> ' + order.phone + '</p>' +
+                '<p><strong>Ημερομηνία Παράδοσης:</strong> ' + formatDate(order.delivery_date) + ' (' + getGreekDayName(order.delivery_date) + ')</p>' +
+                '<p><strong>Τοποθεσία:</strong> ' + order.location_type + '</p>' +
+                (order.address ? '<p><strong>Διεύθυνση:</strong> ' + order.address + '</p>' : '') +
+                '<div style="border:1px solid #ccc; padding:15px; margin:20px 0; min-height:100px; background: #f9f9f9;"><strong>ΠΕΡΙΓΡΑΦΗ ΠΑΡΑΓΓΕΛΙΑΣ:</strong><br><br>' +
+                order.description.replace(/\n/g, '<br>') + '</div>' +
+                '<div style="text-align:right; margin-top: 30px;">' +
+                '<p style="font-size: 1.1rem;"><strong>Σύνολο:</strong> ' + formatCurrency(order.total_price) + '</p>' +
+                '<p style="font-size: 1.1rem;"><strong>Προκαταβολή:</strong> ' + formatCurrency(order.deposit) + '</p>' +
+                '<h2 style="color:#2a5a5a; border-top: 2px solid #2a5a5a; padding-top: 10px; margin-top: 10px;">Υπόλοιπο: ' + formatCurrency(order.total_price - order.deposit) + '</h2></div>' +
+                '<div style="margin-top: 50px; text-align: center; font-size: 0.9rem; color: #666;"><p>Σας ευχαριστούμε για την προτίμησή σας!</p><p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p></div>';
 
             renderAndPrint(html);
-            await Auth.logActivity('print', 'order', orderId, { type: 'single_order' });
+            Auth.logActivity('print', 'order', orderId, { type: 'single_order' });
         }
 
         function printCustomerReport() {
@@ -350,78 +280,39 @@
             const totalDeposits = customerOrders.reduce((sum, o) => sum + (parseFloat(o.deposit) || 0), 0);
             const totalRemaining = totalSpent - totalDeposits;
 
-            let html = `
-                <h2 style="text-align:center; color:#2a5a5a; border-bottom:2px solid #2a5a5a; padding-bottom:10px;">
-                    📊 Αναφορά Πελάτη
-                </h2>
-                <div style="margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px;">
-                    <h3 style="color:#2a5a5a; margin-top: 0;">${currentCustomer.last_name} ${currentCustomer.first_name}</h3>
-                    <p style="margin: 5px 0;"><strong>Τηλέφωνο:</strong> ${currentCustomer.phone}</p>
-                    ${currentCustomer.email ? `<p style="margin: 5px 0;"><strong>Email:</strong> ${currentCustomer.email}</p>` : ''}
-                    ${currentCustomer.address ? `<p style="margin: 5px 0;"><strong>Διεύθυνση:</strong> ${currentCustomer.address}</p>` : ''}
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0;">
-                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 2rem; font-weight: bold; color: #2a5a5a;">${customerOrders.length}</div>
-                        <div style="color: #666;">Συνολικές Παραγγελίες</div>
-                    </div>
-                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 2rem; font-weight: bold; color: #2a5a5a;">${formatCurrency(totalSpent)}</div>
-                        <div style="color: #666;">Συνολική Δαπάνη</div>
-                    </div>
-                </div>
-
-                <h3 style="color:#2a5a5a; border-bottom: 2px solid #eee; padding-bottom: 10px;">Ιστορικό Παραγγελιών</h3>
-                <table border="1" style="width:100%; border-collapse:collapse; font-size:12px; margin-top: 15px;">
-                    <thead>
-                        <tr style="background:#2a5a5a; color:white;">
-                            <th style="padding:10px;">Ημ/νία</th>
-                            <th style="padding:10px;">Περιγραφή</th>
-                            <th style="padding:10px;">Τοποθεσία</th>
-                            <th style="padding:10px;">Σύνολο</th>
-                            <th style="padding:10px;">Προκ/λή</th>
-                            <th style="padding:10px;">Υπόλοιπο</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+            let html = '<h2 style="text-align:center; color:#2a5a5a; border-bottom:2px solid #2a5a5a; padding-bottom:10px;">📊 Αναφορά Πελάτη</h2>' +
+                '<div style="margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px;">' +
+                '<h3 style="color:#2a5a5a; margin-top: 0;">' + currentCustomer.last_name + ' ' + currentCustomer.first_name + '</h3>' +
+                '<p style="margin: 5px 0;"><strong>Τηλέφωνο:</strong> ' + currentCustomer.phone + '</p>' +
+                (currentCustomer.email ? '<p style="margin: 5px 0;"><strong>Email:</strong> ' + currentCustomer.email + '</p>' : '') +
+                (currentCustomer.address ? '<p style="margin: 5px 0;"><strong>Διεύθυνση:</strong> ' + currentCustomer.address + '</p>' : '') +
+                '</div><div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0;">' +
+                '<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center;"><div style="font-size: 2rem; font-weight: bold; color: #2a5a5a;">' + customerOrders.length + '</div><div style="color: #666;">Συνολικές Παραγγελίες</div></div>' +
+                '<div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;"><div style="font-size: 2rem; font-weight: bold; color: #2a5a5a;">' + formatCurrency(totalSpent) + '</div><div style="color: #666;">Συνολική Δαπάνη</div></div></div>' +
+                '<h3 style="color:#2a5a5a; border-bottom: 2px solid #eee; padding-bottom: 10px;">Ιστορικό Παραγγελιών</h3>' +
+                '<table border="1" style="width:100%; border-collapse:collapse; font-size:12px; margin-top: 15px;"><thead><tr style="background:#2a5a5a; color:white;">' +
+                '<th style="padding:10px;">Ημ/νία</th><th style="padding:10px;">Περιγραφή</th><th style="padding:10px;">Τοποθεσία</th><th style="padding:10px;">Σύνολο</th><th style="padding:10px;">Προκ/λή</th><th style="padding:10px;">Υπόλοιπο</th></tr></thead><tbody>';
 
             customerOrders.forEach((order, index) => {
                 const bgColor = index % 2 === 0 ? '#f9f9f9' : 'white';
-                html += `
-                    <tr style="background: ${bgColor};">
-                        <td style="padding:8px;">${formatDate(order.delivery_date)}</td>
-                        <td style="padding:8px;">${order.description.substring(0, 60)}${order.description.length > 60 ? '...' : ''}</td>
-                        <td style="padding:8px;">${order.location_type}</td>
-                        <td style="padding:8px;"><strong>${formatCurrency(order.total_price)}</strong></td>
-                        <td style="padding:8px;">${formatCurrency(order.deposit)}</td>
-                        <td style="padding:8px;">${formatCurrency(order.total_price - order.deposit)}</td>
-                    </tr>`;
+                html += '<tr style="background: ' + bgColor + ';"><td style="padding:8px;">' + formatDate(order.delivery_date) + '</td>' +
+                    '<td style="padding:8px;">' + order.description.substring(0, 60) + (order.description.length > 60 ? '...' : '') + '</td>' +
+                    '<td style="padding:8px;">' + order.location_type + '</td>' +
+                    '<td style="padding:8px;"><strong>' + formatCurrency(order.total_price) + '</strong></td>' +
+                    '<td style="padding:8px;">' + formatCurrency(order.deposit) + '</td>' +
+                    '<td style="padding:8px;">' + formatCurrency(order.total_price - order.deposit) + '</td></tr>';
             });
 
-            html += `
-                    </tbody>
-                    <tfoot>
-                        <tr style="background:#2a5a5a; color:white; font-weight:bold;">
-                            <td colspan="3" style="padding:10px; text-align:right;">ΣΥΝΟΛΑ:</td>
-                            <td style="padding:10px;">${formatCurrency(totalSpent)}</td>
-                            <td style="padding:10px;">${formatCurrency(totalDeposits)}</td>
-                            <td style="padding:10px;">${formatCurrency(totalRemaining)}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-
-                <div style="margin-top: 40px; text-align: center; font-size: 0.9rem; color: #666;">
-                    <p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p>
-                    <p>Ημερομηνία Εκτύπωσης: ${formatDate(new Date().toISOString().split('T')[0])}</p>
-                </div>
-            `;
+            html += '</tbody><tfoot><tr style="background:#2a5a5a; color:white; font-weight:bold;">' +
+                '<td colspan="3" style="padding:10px; text-align:right;">ΣΥΝΟΛΑ:</td>' +
+                '<td style="padding:10px;">' + formatCurrency(totalSpent) + '</td>' +
+                '<td style="padding:10px;">' + formatCurrency(totalDeposits) + '</td>' +
+                '<td style="padding:10px;">' + formatCurrency(totalRemaining) + '</td></tr></tfoot></table>' +
+                '<div style="margin-top: 40px; text-align: center; font-size: 0.9rem; color: #666;"><p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p>' +
+                '<p>Ημερομηνία Εκτύπωσης: ' + formatDate(new Date().toISOString().split('T')[0]) + '</p></div>';
 
             renderAndPrint(html);
-            Auth.logActivity('print', 'customer', currentCustomer.id, { 
-                type: 'customer_report',
-                orders_count: customerOrders.length
-            });
+            Auth.logActivity('print', 'customer', currentCustomer.id, { type: 'customer_report', orders_count: customerOrders.length });
         }
 
         window.onload = loadCustomerProfile;
