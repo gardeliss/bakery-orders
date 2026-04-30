@@ -4,8 +4,7 @@
 
 // Supabase Configuration
 const SUPABASE_URL = 'https://qfbivcxyhtndpdgndldw.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_G2DPXI7p41P8v-W3oxTjBg_Ni3tzMA6';
-//const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmYml2Y3h5aHRuZHBkZ25kbGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjAzNjUsImV4cCI6MjA5MjYzNjM2NX0.StykJvRcACbDAV8S9AnHALxUv8sIrXpJeKxdayp4jHM';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmYml2Y3h5aHRuZHBkZ25kbGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjAzNjUsImV4cCI6MjA5MjYzNjM2NX0.StykJvRcACbDAV8S9AnHALxUv8sIrXpJeKxdayp4jHM';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================
@@ -40,7 +39,8 @@ const Auth = {
             }
 
             // For demo: password check (in production use bcrypt)
-            if (password !== 'admin123' && password !== 'user123') {
+            // Check against stored password_hash
+            if (data.password_hash !== password) {
                 throw new Error('Email ή κωδικός λάθος');
             }
 
@@ -134,7 +134,7 @@ function showToast(message, type = 'info') {
 
     // Create toast element
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
+    toast.className = 'toast toast-' + type;
     
     // Icon based on type
     const icons = {
@@ -144,11 +144,9 @@ function showToast(message, type = 'info') {
         info: 'ℹ'
     };
 
-    toast.innerHTML = `
-        <div class="toast-icon">${icons[type] || icons.info}</div>
-        <div class="toast-message">${message}</div>
-        <div class="toast-close" onclick="this.parentElement.remove()">×</div>
-    `;
+    toast.innerHTML = '<div class="toast-icon">' + (icons[type] || icons.info) + '</div>' +
+        '<div class="toast-message">' + message + '</div>' +
+        '<div class="toast-close" onclick="this.parentElement.remove()">×</div>';
 
     container.appendChild(toast);
 
@@ -199,10 +197,8 @@ function showModal(title, content, buttons = []) {
     // Header
     const header = document.createElement('div');
     header.className = 'modal-header';
-    header.innerHTML = `
-        <h3 class="modal-title">${title}</h3>
-        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-    `;
+    header.innerHTML = '<h3 class="modal-title">' + title + '</h3>' +
+        '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button>';
     
     // Body
     const body = document.createElement('div');
@@ -215,7 +211,7 @@ function showModal(title, content, buttons = []) {
     
     buttons.forEach(btn => {
         const button = document.createElement('button');
-        button.className = `btn ${btn.class || 'btn-secondary'}`;
+        button.className = 'btn ' + (btn.class || 'btn-secondary');
         button.textContent = btn.text;
         button.onclick = () => {
             if (btn.onClick) btn.onClick();
@@ -238,7 +234,7 @@ function showModal(title, content, buttons = []) {
 }
 
 function confirmDialog(message, onConfirm) {
-    showModal('Επιβεβαίωση', `<p>${message}</p>`, [
+    showModal('Επιβεβαίωση', '<p>' + message + '</p>', [
         {
             text: 'Ακύρωση',
             class: 'btn-secondary'
@@ -308,51 +304,34 @@ function renderNavbar() {
     const navbar = document.getElementById('navbar');
     if (!navbar) return;
 
-    navbar.innerHTML = `
-        <div class="navbar-content">
-            <div class="navbar-brand">
-                <img src="banner.png" alt="Ζάχαρη" class="logo-nav">
-                <span class="brand-text">Ζάχαρη</span>
-            </div>
-            <div class="navbar-menu">
-                <a href="dashboard.html" class="nav-link ${currentPage === 'dashboard.html' ? 'active' : ''}">
-                    📊 Dashboard
-                </a>
-                <a href="order-form.html" class="nav-link ${currentPage === 'order-form.html' ? 'active' : ''}">
-                    ➕ Νέα Παραγγελία
-                </a>
-                <a href="orders-list.html" class="nav-link ${currentPage === 'orders-list.html' ? 'active' : ''}">
-                    📋 Παραγγελίες
-                </a>
-                <a href="calendar.html" class="nav-link ${currentPage === 'calendar.html' ? 'active' : ''}">
-                    📅 Ημερολόγιο
-                </a>
-                <a href="customers.html" class="nav-link ${currentPage === 'customers.html' ? 'active' : ''}">
-                    👥 Πελάτες
-                </a>
-                ${user.role === 'admin' ? `
-                    <a href="activity-log.html" class="nav-link ${currentPage === 'activity-log.html' ? 'active' : ''}">
-                        📝 Ιστορικό
-                    </a>
-                    <a href="backup.html" class="nav-link ${currentPage === 'backup.html' ? 'active' : ''}">
-                        💾 Backup
-                    </a>
-                    <a href="users.html" class="nav-link ${currentPage === 'users.html' ? 'active' : ''}">
-                        👤 Χρήστες
-                    </a>
-                ` : ''}
-            </div>
-            <div class="user-menu">
-                <div class="user-info">
-                    <div class="user-name">${user.full_name}</div>
-                    <div class="user-role">${user.role === 'admin' ? 'Διαχειριστής' : 'Χρήστης'}</div>
-                </div>
-                <button class="btn btn-sm btn-danger" onclick="Auth.logout()">
-                    Έξοδος
-                </button>
-            </div>
-        </div>
-    `;
+    let adminLinks = '';
+    if (user.role === 'admin') {
+        adminLinks = '<a href="activity-log.html" class="nav-link ' + (currentPage === 'activity-log.html' ? 'active' : '') + '">📝 Ιστορικό</a>' +
+            '<a href="backup.html" class="nav-link ' + (currentPage === 'backup.html' ? 'active' : '') + '">💾 Backup</a>' +
+            '<a href="users.html" class="nav-link ' + (currentPage === 'users.html' ? 'active' : '') + '">👤 Χρήστες</a>';
+    }
+
+    navbar.innerHTML = '<div class="navbar-content">' +
+        '<div class="navbar-brand">' +
+            '<img src="banner.png" alt="Ζάχαρη" class="logo-nav">' +
+            '<span class="brand-text">Ζάχαρη</span>' +
+        '</div>' +
+        '<div class="navbar-menu">' +
+            '<a href="dashboard.html" class="nav-link ' + (currentPage === 'dashboard.html' ? 'active' : '') + '">📊 Dashboard</a>' +
+            '<a href="order-form.html" class="nav-link ' + (currentPage === 'order-form.html' ? 'active' : '') + '">➕ Νέα Παραγγελία</a>' +
+            '<a href="orders-list.html" class="nav-link ' + (currentPage === 'orders-list.html' ? 'active' : '') + '">📋 Παραγγελίες</a>' +
+            '<a href="calendar.html" class="nav-link ' + (currentPage === 'calendar.html' ? 'active' : '') + '">📅 Ημερολόγιο</a>' +
+            '<a href="customers.html" class="nav-link ' + (currentPage === 'customers.html' ? 'active' : '') + '">👥 Πελάτες</a>' +
+            adminLinks +
+        '</div>' +
+        '<div class="user-menu">' +
+            '<div class="user-info">' +
+                '<div class="user-name">' + user.full_name + '</div>' +
+                '<div class="user-role">' + (user.role === 'admin' ? 'Διαχειριστής' : 'Χρήστης') + '</div>' +
+            '</div>' +
+            '<button class="btn btn-sm btn-danger" onclick="Auth.logout()">Έξοδος</button>' +
+        '</div>' +
+    '</div>';
 }
 
 // ============================================
@@ -365,12 +344,9 @@ function renderAndPrint(htmlContent) {
         return;
     }
     
-    printArea.innerHTML = `
-        <div style="text-align:center; margin-bottom:20px;">
-            <img src="banner.png" style="max-width:250px;">
-        </div>
-        ${htmlContent}
-    `;
+    printArea.innerHTML = '<div style="text-align:center; margin-bottom:20px;">' +
+        '<img src="banner.png" style="max-width:250px;">' +
+        '</div>' + htmlContent;
     
     window.print();
 }
