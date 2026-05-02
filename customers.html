@@ -4,52 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Πελατολόγιο - Ζαχαροπλαστείο Ζάχαρη</title>
-    <link rel="stylesheet" href="modern-style.css">
+    <link rel="stylesheet" href="v3-modern-style.css">
+    <style>
+        /* Mobile Cards for Customers */
+        @media (max-width: 768px) {
+            .table-wrapper {
+                display: none;
+            }
+            
+            .mobile-customer-cards {
+                display: block;
+            }
+            
+            .customer-mobile-card {
+                background: var(--bg-card);
+                border-radius: var(--radius-md);
+                padding: 15px;
+                margin-bottom: 12px;
+                box-shadow: var(--shadow-sm);
+                border-left: 4px solid var(--primary);
+            }
+            
+            .customer-mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 10px;
+            }
+            
+            .customer-mobile-name {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: var(--primary);
+            }
+            
+            .customer-mobile-stats {
+                display: flex;
+                gap: 10px;
+                margin: 8px 0;
+            }
+            
+            .customer-mobile-stat {
+                flex: 1;
+                background: #f8f9fa;
+                padding: 8px;
+                border-radius: 6px;
+                text-align: center;
+            }
+            
+            .customer-mobile-stat-value {
+                font-weight: 700;
+                color: var(--primary);
+            }
+            
+            .customer-mobile-stat-label {
+                font-size: 0.75rem;
+                color: var(--text-secondary);
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-customer-cards {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="top-header">
+        <div class="header-content">
+            <div style="width: 100px;"></div>
+            <div class="logo-container">
+                <a href="dashboard.html" class="logo-link">
+                    <img src="banner.png" alt="Ζάχαρη" class="logo-nav">
+                </a>
+            </div>
+            <div class="user-menu-top" id="userMenuTop"></div>
+        </div>
+    </div>
+
     <nav id="navbar" class="navbar"></nav>
+    <div class="mobile-user-icon" id="mobileUserIcon">👤</div>
 
     <div class="container">
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">👥 Πελατολόγιο</h2>
-                <button onclick="syncCustomers()" class="btn btn-primary">
-                    🔄 Συγχρονισμός από Παραγγελίες
-                </button>
+                <button onclick="syncCustomers()" class="btn btn-primary">🔄 Sync</button>
             </div>
             <div class="card-body">
                 <!-- Search -->
-                <div class="search-bar">
+                <div style="position: relative; margin-bottom: 15px;">
                     <input 
                         type="text" 
                         id="searchInput" 
-                        class="search-input" 
-                        placeholder="🔍 Αναζήτηση με όνομα, επώνυμο ή τηλέφωνο..."
+                        class="form-control" 
+                        style="padding-left: 40px;"
+                        placeholder="🔍 Αναζήτηση..."
                         onkeyup="filterCustomers()"
                     >
-                    <span class="search-icon">🔍</span>
                 </div>
 
-                <!-- Filter and Sort -->
-                <div class="form-row" style="margin-bottom: 20px;">
-                    <div class="form-group">
-                        <label class="form-label">Ταξινόμηση</label>
-                        <select id="sortOrder" class="form-control" onchange="filterCustomers()">
-                            <option value="orders_desc">Περισσότερες Παραγγελίες</option>
-                            <option value="spent_desc">Μεγαλύτερη Δαπάνη</option>
-                            <option value="name_asc">Όνομα (Α-Ω)</option>
-                            <option value="name_desc">Όνομα (Ω-Α)</option>
-                            <option value="recent">Πιο Πρόσφατοι</option>
-                        </select>
-                    </div>
+                <!-- Sort -->
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <select id="sortOrder" class="form-control" onchange="filterCustomers()">
+                        <option value="orders_desc">Περισσότερες Παραγγελίες</option>
+                        <option value="spent_desc">Μεγαλύτερη Δαπάνη</option>
+                        <option value="name_asc">Όνομα (Α-Ω)</option>
+                        <option value="recent">Πιο Πρόσφατοι</option>
+                    </select>
                 </div>
 
                 <!-- Results Count -->
-                <div style="margin-bottom: 15px; color: #6c757d;">
+                <div style="margin-bottom: 12px; color: #6c757d; font-size: 0.9rem;">
                     <span id="resultsCount">0</span> πελάτες
                 </div>
 
-                <!-- Customers Table -->
+                <!-- Desktop Table -->
                 <div class="table-wrapper">
                     <table class="table">
                         <thead>
@@ -62,17 +133,21 @@
                                 <th>Ενέργειες</th>
                             </tr>
                         </thead>
-                        <tbody id="customersTableBody">
-                            <!-- Will be populated by JavaScript -->
-                        </tbody>
+                        <tbody id="customersTableBody"></tbody>
                     </table>
                 </div>
+
+                <!-- Mobile Cards -->
+                <div class="mobile-customer-cards" id="mobileCustomerCards"></div>
             </div>
         </div>
     </div>
 
+    <nav class="bottom-nav" id="bottomNav"></nav>
+    <a href="order-form.html" class="fab">+</a>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js"></script>
+    <script src="v3-app.js"></script>
     <script>
         Auth.requireAuth();
 
@@ -110,21 +185,13 @@
                        (customer.email && customer.email.toLowerCase().includes(searchTerm));
             });
 
-            // Sort
             filtered.sort((a, b) => {
                 switch (sortOrder) {
-                    case 'orders_desc':
-                        return b.total_orders - a.total_orders;
-                    case 'spent_desc':
-                        return b.total_spent - a.total_spent;
-                    case 'name_asc':
-                        return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name);
-                    case 'name_desc':
-                        return (b.last_name + b.first_name).localeCompare(a.last_name + a.first_name);
-                    case 'recent':
-                        return new Date(b.created_at) - new Date(a.created_at);
-                    default:
-                        return 0;
+                    case 'orders_desc': return b.total_orders - a.total_orders;
+                    case 'spent_desc': return b.total_spent - a.total_spent;
+                    case 'name_asc': return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name);
+                    case 'recent': return new Date(b.created_at) - new Date(a.created_at);
+                    default: return 0;
                 }
             });
 
@@ -133,88 +200,100 @@
 
         function displayCustomers(customers) {
             const tbody = document.getElementById('customersTableBody');
+            const mobileCards = document.getElementById('mobileCustomerCards');
             const count = document.getElementById('resultsCount');
 
             count.textContent = customers.length;
 
             if (customers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #6c757d; padding: 40px;">Δεν βρέθηκαν πελάτες</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #6c757d; padding: 30px;">Δεν βρέθηκαν πελάτες</td></tr>';
+                mobileCards.innerHTML = '<p style="text-align:center; color: #6c757d; padding: 30px;">Δεν βρέθηκαν πελάτες</p>';
                 return;
             }
 
-            tbody.innerHTML = customers.map(customer => `
-                <tr>
-                    <td>
-                        <strong>${customer.last_name} ${customer.first_name}</strong>
-                        ${customer.notes ? `<br><small style="color: #6c757d;">${customer.notes.substring(0, 50)}${customer.notes.length > 50 ? '...' : ''}</small>` : ''}
-                    </td>
-                    <td>${customer.phone}</td>
-                    <td>${customer.email || '-'}</td>
-                    <td><span class="badge badge-info">${customer.total_orders}</span></td>
-                    <td><strong>${formatCurrency(customer.total_spent)}</strong></td>
-                    <td>
-                        <div style="display: flex; gap: 8px;">
-                            <a href="customer-profile.html?id=${customer.id}" class="btn btn-sm btn-secondary">
-                                👤 Προφίλ
-                            </a>
-                            <button onclick="editCustomer('${customer.id}')" class="btn btn-sm btn-outline">
-                                📝
-                            </button>
-                            <button onclick="deleteCustomer('${customer.id}')" class="btn btn-sm btn-danger">
-                                🗑️
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            // Desktop table
+            tbody.innerHTML = customers.map(c => 
+                '<tr>' +
+                    '<td><strong>' + c.last_name + ' ' + c.first_name + '</strong></td>' +
+                    '<td>' + c.phone + '</td>' +
+                    '<td>' + (c.email || '-') + '</td>' +
+                    '<td><span class="badge badge-info">' + c.total_orders + '</span></td>' +
+                    '<td><strong>' + formatCurrency(c.total_spent) + '</strong></td>' +
+                    '<td>' +
+                        '<div style="display: flex; gap: 6px;">' +
+                            '<a href="customer-profile.html?id=' + c.id + '" class="btn btn-sm btn-secondary">👤</a>' +
+                            '<button onclick="editCustomer(\'' + c.id + '\')" class="btn btn-sm btn-outline">📝</button>' +
+                            '<button onclick="deleteCustomer(\'' + c.id + '\')" class="btn btn-sm btn-danger">🗑️</button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>'
+            ).join('');
+
+            // Mobile cards
+            mobileCards.innerHTML = '';
+            customers.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'customer-mobile-card';
+                card.innerHTML = 
+                    '<div class="customer-mobile-header">' +
+                        '<div class="customer-mobile-name">' + c.last_name + ' ' + c.first_name + '</div>' +
+                    '</div>' +
+                    '<div style="margin: 8px 0; font-size: 0.9rem; color: #6c757d;">📞 ' + c.phone + '</div>' +
+                    (c.email ? '<div style="margin: 8px 0; font-size: 0.9rem; color: #6c757d;">✉️ ' + c.email + '</div>' : '') +
+                    '<div class="customer-mobile-stats">' +
+                        '<div class="customer-mobile-stat">' +
+                            '<div class="customer-mobile-stat-value">' + c.total_orders + '</div>' +
+                            '<div class="customer-mobile-stat-label">Παραγγελίες</div>' +
+                        '</div>' +
+                        '<div class="customer-mobile-stat">' +
+                            '<div class="customer-mobile-stat-value">' + formatCurrency(c.total_spent) + '</div>' +
+                            '<div class="customer-mobile-stat-label">Σύνολο</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="order-actions" style="margin-top: 10px;"></div>';
+
+                const profileBtn = document.createElement('a');
+                profileBtn.href = 'customer-profile.html?id=' + c.id;
+                profileBtn.className = 'btn btn-sm btn-secondary';
+                profileBtn.textContent = '👤 Προφίλ';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn btn-sm btn-outline';
+                editBtn.textContent = '📝';
+                editBtn.addEventListener('click', () => editCustomer(c.id));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-sm btn-danger';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.addEventListener('click', () => deleteCustomer(c.id));
+
+                const actionsDiv = card.querySelector('.order-actions');
+                actionsDiv.appendChild(profileBtn);
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(deleteBtn);
+
+                mobileCards.appendChild(card);
+            });
         }
 
         function editCustomer(customerId) {
             const customer = allCustomers.find(c => c.id === customerId);
             if (!customer) return;
 
-            const modalContent = `
-                <form id="editCustomerForm" onsubmit="saveCustomer(event, '${customerId}')">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Όνομα</label>
-                            <input type="text" id="editFirstName" class="form-control" value="${customer.first_name}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Επώνυμο</label>
-                            <input type="text" id="editLastName" class="form-control" value="${customer.last_name}" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Τηλέφωνο</label>
-                            <input type="tel" id="editPhone" class="form-control" value="${customer.phone}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="editEmail" class="form-control" value="${customer.email || ''}">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Διεύθυνση</label>
-                        <input type="text" id="editAddress" class="form-control" value="${customer.address || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Σημειώσεις</label>
-                        <textarea id="editNotes" class="form-control" rows="3">${customer.notes || ''}</textarea>
-                    </div>
-                </form>
-            `;
+            const modalContent = '<form id="editCustomerForm" onsubmit="saveCustomer(event, \'' + customerId + '\')">' +
+                '<div class="form-row">' +
+                '<div class="form-group"><label class="form-label">Όνομα</label><input type="text" id="editFirstName" class="form-control" value="' + customer.first_name + '" required></div>' +
+                '<div class="form-group"><label class="form-label">Επώνυμο</label><input type="text" id="editLastName" class="form-control" value="' + customer.last_name + '" required></div>' +
+                '</div><div class="form-row">' +
+                '<div class="form-group"><label class="form-label">Τηλέφωνο</label><input type="tel" id="editPhone" class="form-control" value="' + customer.phone + '" required></div>' +
+                '<div class="form-group"><label class="form-label">Email</label><input type="email" id="editEmail" class="form-control" value="' + (customer.email || '') + '"></div>' +
+                '</div><div class="form-group"><label class="form-label">Διεύθυνση</label><input type="text" id="editAddress" class="form-control" value="' + (customer.address || '') + '"></div>' +
+                '<div class="form-group"><label class="form-label">Σημειώσεις</label><textarea id="editNotes" class="form-control" rows="3">' + (customer.notes || '') + '</textarea></div>' +
+                '</form>';
 
-            showModal('📝 Επεξεργασία Πελάτη', modalContent, [
+            showModal('📝 Επεξεργασία', modalContent, [
                 { text: 'Ακύρωση', class: 'btn-secondary' },
-                { 
-                    text: 'Αποθήκευση', 
-                    class: 'btn-primary',
-                    onClick: () => {
-                        document.getElementById('editCustomerForm').requestSubmit();
-                    }
-                }
+                { text: 'Αποθήκευση', class: 'btn-primary', onClick: () => { document.getElementById('editCustomerForm').requestSubmit(); }}
             ]);
         }
 
@@ -233,15 +312,11 @@
             };
 
             try {
-                const { error } = await _supabase
-                    .from('customers')
-                    .update(customerData)
-                    .eq('id', customerId);
-
+                const { error } = await _supabase.from('customers').update(customerData).eq('id', customerId);
                 if (error) throw error;
 
                 await Auth.logActivity('update', 'customer', customerId, { customer: customerData });
-                showToast('Ο πελάτης ενημερώθηκε επιτυχώς!', 'success');
+                showToast('Ο πελάτης ενημερώθηκε!', 'success');
                 fetchCustomers();
 
             } catch (err) {
@@ -256,27 +331,20 @@
             if (!customer) return;
 
             confirmDialog(
-                `Είστε σίγουροι ότι θέλετε να διαγράψετε τον/την ${customer.last_name} ${customer.first_name}; Οι παραγγελίες τους δεν θα διαγραφούν.`,
+                'Διαγραφή πελάτη: ' + customer.last_name + ' ' + customer.first_name + ';',
                 async () => {
                     showLoading();
 
                     try {
-                        const { error } = await _supabase
-                            .from('customers')
-                            .delete()
-                            .eq('id', customerId);
-
+                        const { error } = await _supabase.from('customers').delete().eq('id', customerId);
                         if (error) throw error;
 
-                        await Auth.logActivity('delete', 'customer', customerId, { 
-                            customer: `${customer.last_name} ${customer.first_name}`
-                        });
-
-                        showToast('Ο πελάτης διαγράφηκε επιτυχώς', 'success');
+                        await Auth.logActivity('delete', 'customer', customerId, { customer: customer.last_name + ' ' + customer.first_name });
+                        showToast('Ο πελάτης διαγράφηκε', 'success');
                         fetchCustomers();
 
                     } catch (err) {
-                        showToast('Σφάλμα διαγραφής: ' + err.message, 'error');
+                        showToast('Σφάλμα: ' + err.message, 'error');
                     }
 
                     hideLoading();
@@ -286,19 +354,14 @@
 
         async function syncCustomers() {
             confirmDialog(
-                'Θέλετε να συγχρονίσετε το πελατολόγιο με τις παραγγελίες; Αυτό θα ενημερώσει τα στατιστικά όλων των πελατών.',
+                'Συγχρονισμός πελατολογίου με παραγγελίες;',
                 async () => {
                     showLoading();
 
                     try {
-                        // Get all orders
-                        const { data: orders } = await _supabase
-                            .from('orders')
-                            .select('*');
-
+                        const { data: orders } = await _supabase.from('orders').select('*');
                         if (!orders) throw new Error('Δεν βρέθηκαν παραγγελίες');
 
-                        // Group by phone
                         const customerMap = {};
                         orders.forEach(order => {
                             if (!customerMap[order.phone]) {
@@ -306,6 +369,7 @@
                                     first_name: order.first_name,
                                     last_name: order.last_name,
                                     phone: order.phone,
+                                    email: order.email,
                                     address: order.address,
                                     total_orders: 0,
                                     total_spent: 0
@@ -315,44 +379,28 @@
                             customerMap[order.phone].total_spent += parseFloat(order.total_price) || 0;
                         });
 
-                        // Upsert customers
                         for (const phone in customerMap) {
                             const customerData = customerMap[phone];
                             
-                            // Check if exists
-                            const { data: existing } = await _supabase
-                                .from('customers')
-                                .select('id')
-                                .eq('phone', phone)
-                                .single();
+                            const { data: existing } = await _supabase.from('customers').select('id').eq('phone', phone).single();
 
                             if (existing) {
-                                // Update
-                                await _supabase
-                                    .from('customers')
-                                    .update({
-                                        total_orders: customerData.total_orders,
-                                        total_spent: customerData.total_spent,
-                                        updated_at: new Date().toISOString()
-                                    })
-                                    .eq('phone', phone);
+                                await _supabase.from('customers').update({
+                                    total_orders: customerData.total_orders,
+                                    total_spent: customerData.total_spent,
+                                    updated_at: new Date().toISOString()
+                                }).eq('phone', phone);
                             } else {
-                                // Insert
-                                await _supabase
-                                    .from('customers')
-                                    .insert([customerData]);
+                                await _supabase.from('customers').insert([customerData]);
                             }
                         }
 
-                        await Auth.logActivity('sync', 'customer', null, { 
-                            count: Object.keys(customerMap).length 
-                        });
-
-                        showToast('Ο συγχρονισμός ολοκληρώθηκε επιτυχώς!', 'success');
+                        await Auth.logActivity('sync', 'customer', null, { count: Object.keys(customerMap).length });
+                        showToast('Ο συγχρονισμός ολοκληρώθηκε!', 'success');
                         fetchCustomers();
 
                     } catch (err) {
-                        showToast('Σφάλμα συγχρονισμού: ' + err.message, 'error');
+                        showToast('Σφάλμα: ' + err.message, 'error');
                     }
 
                     hideLoading();

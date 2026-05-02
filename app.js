@@ -1,58 +1,57 @@
 /* ============================================
-   CORE APP.JS - Utilities & Auth
+   CORE APP.JS v3.0 - Enhanced Features
+   - File Upload (Supabase Storage)
+   - Username-based Login
+   - Email Auto-sync
+   - CSV UTF-8 with BOM
    ============================================ */
 
-// Supabase Configuration
 const SUPABASE_URL = 'https://qfbivcxyhtndpdgndldw.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmYml2Y3h5aHRuZHBkZ25kbGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjAzNjUsImV4cCI6MjA5MjYzNjM2NX0.StykJvRcACbDAV8S9AnHALxUv8sIrXpJeKxdayp4jHM';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const STORAGE_BUCKET = 'order-images';
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 // ============================================
-// AUTH SYSTEM
+// AUTH SYSTEM - USERNAME BASED
 // ============================================
 const Auth = {
-    // Check if user is logged in
     isAuthenticated() {
         return localStorage.getItem('user') !== null;
     },
 
-    // Get current user
     getCurrentUser() {
         const userStr = localStorage.getItem('user');
         return userStr ? JSON.parse(userStr) : null;
     },
 
-    // Login
-    async login(email, password) {
+    async login(username, password) {
         try {
             showLoading();
             
-            // Simple auth - In production, use proper password hashing
             const { data, error } = await _supabase
                 .from('users')
                 .select('*')
-                .eq('email', email)
+                .eq('username', username)
                 .single();
 
             if (error || !data) {
-                throw new Error('Email ή κωδικός λάθος');
+                throw new Error('Username ή κωδικός λάθος');
             }
 
-            // For demo: password check (in production use bcrypt)
-            // Check against stored password_hash
             if (data.password_hash !== password) {
-                throw new Error('Email ή κωδικός λάθος');
+                throw new Error('Username ή κωδικός λάθος');
             }
 
-            // Save user to localStorage
             localStorage.setItem('user', JSON.stringify({
                 id: data.id,
+                username: data.username,
                 email: data.email,
                 full_name: data.full_name,
                 role: data.role
             }));
 
-            // Log activity
             await this.logActivity('login', 'user', data.id);
 
             hideLoading();
@@ -68,7 +67,6 @@ const Auth = {
         }
     },
 
-    // Logout
     logout() {
         const user = this.getCurrentUser();
         if (user) {
@@ -78,20 +76,17 @@ const Auth = {
         window.location.href = 'index.html';
     },
 
-    // Check if user has admin role
     isAdmin() {
         const user = this.getCurrentUser();
         return user && user.role === 'admin';
     },
 
-    // Protect pages
     requireAuth() {
         if (!this.isAuthenticated()) {
             window.location.href = 'index.html';
         }
     },
 
-    // Require admin
     requireAdmin() {
         if (!this.isAuthenticated() || !this.isAdmin()) {
             showToast('Δεν έχετε δικαίωμα πρόσβασης', 'error');
@@ -101,7 +96,6 @@ const Auth = {
         }
     },
 
-    // Log activity
     async logActivity(action, entity_type, entity_id, details = {}) {
         const user = this.getCurrentUser();
         if (!user) return;
@@ -121,10 +115,147 @@ const Auth = {
 };
 
 // ============================================
+// FILE UPLOAD SYSTEM
+// ============================================
+const FileUpload = {
+    async uploadImage(file, orderId) {
+        if (!file) return null;
+        
+        // Validate file type
+        if (!file.type.match('image/(jpeg|jpg|png)')) {
+            throw new Error('Μόνο JPEG/PNG αρχεία επιτρέπονται');
+        }
+        
+        // Validate file size
+        if (file.size > MAX_FILE_SIZE) {
+            throw new Error('Το αρχείο είναι πολύ μεγάλο (max 5MB)');
+        }
+        
+        const fileExt = file.name.split('.').pop();
+        const fileName = orderId + '_' + Date.now() + '.' + fileExt;
+        const filePath = fileName;
+
+        const { data, error } = await _supabase.storage
+            .from(STORAGE_BUCKET)
+            .upload(filePath, file);
+
+        if (error) throw error;
+
+        const { data: urlData } = _supabase.storage
+            .from(STORAGE_BUCKET)
+            .getPublicUrl(filePath);
+
+        return urlData.publicUrl;
+    },
+
+    async uploadMultiple(files, orderId) {
+        const urls = [];
+        for (const file of files) {
+            try {
+                const url = await this.uploadImage(file, orderId);
+                if (url) urls.push(url);
+            } catch (err) {
+                console.error('Upload failed:', err);
+            }
+        }
+        return urls;
+    },
+
+    async deleteImage(imageUrl) {
+        try {
+            const fileName = imageUrl.split('/').pop();
+            await _supabase.storage.from(STORAGE_BUCKET).remove([fileName]);
+        } catch (err) {
+            console.error('Delete failed:', err);
+        }
+    }
+};
+
+// ============================================
+// IMAGE LIGHTBOX
+// ============================================
+function showLightbox(imageUrl) {
+    const overlay = document.createElement('div');
+    overlay.className = 'lightbox-overlay';
+    overlay.innerHTML = 
+        '<div class="lightbox-content">' +
+            '<img src="' + imageUrl + '" alt="Order Image">' +
+            '<div class="lightbox-close">×</div>' +
+        '</div>';
+    
+    document.body.appendChild(overlay);
+    
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay || e.target.className === 'lightbox-close') {
+            overlay.remove();
+        }
+    });
+}
+
+function renderImageGallery(imageUrls, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container || !imageUrls || imageUrls.length === 0) return;
+    
+    const gallery = document.createElement('div');
+    gallery.className = 'image-gallery';
+    
+    imageUrls.forEach(url => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.innerHTML = '<img src="' + url + '" alt="Order Image">';
+        item.addEventListener('click', () => showLightbox(url));
+        gallery.appendChild(item);
+    });
+    
+    container.appendChild(gallery);
+}
+
+// ============================================
+// CUSTOMER EMAIL AUTO-SYNC
+// ============================================
+async function syncCustomerEmail(phone, email, firstName, lastName) {
+    if (!email || !phone) return;
+    
+    try {
+        const { data: existing } = await _supabase
+            .from('customers')
+            .select('id')
+            .eq('phone', phone)
+            .single();
+
+        if (existing) {
+            await _supabase
+                .from('customers')
+                .update({
+                    email: email,
+                    first_name: firstName,
+                    last_name: lastName,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('phone', phone);
+        }
+    } catch (err) {
+        console.error('Email sync failed:', err);
+    }
+}
+
+// ============================================
+// CSV EXPORT WITH UTF-8 BOM
+// ============================================
+function exportToCSVWithBOM(data, filename) {
+    const BOM = '\uFEFF';
+    const csvContent = BOM + data;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
+
+// ============================================
 // TOAST NOTIFICATIONS
 // ============================================
 function showToast(message, type = 'info') {
-    // Create toast container if it doesn't exist
     let container = document.querySelector('.toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -132,11 +263,9 @@ function showToast(message, type = 'info') {
         document.body.appendChild(container);
     }
 
-    // Create toast element
     const toast = document.createElement('div');
     toast.className = 'toast toast-' + type;
     
-    // Icon based on type
     const icons = {
         success: '✓',
         error: '✕',
@@ -150,7 +279,6 @@ function showToast(message, type = 'info') {
 
     container.appendChild(toast);
 
-    // Auto remove after 4 seconds
     setTimeout(() => {
         toast.style.animation = 'slideInRight 0.3s ease reverse';
         setTimeout(() => toast.remove(), 300);
@@ -183,29 +311,24 @@ function hideLoading() {
 // MODAL SYSTEM
 // ============================================
 function showModal(title, content, buttons = []) {
-    // Remove existing modal
     const existing = document.querySelector('.modal-overlay');
     if (existing) existing.remove();
 
-    // Create modal
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     
     const modal = document.createElement('div');
     modal.className = 'modal';
     
-    // Header
     const header = document.createElement('div');
     header.className = 'modal-header';
     header.innerHTML = '<h3 class="modal-title">' + title + '</h3>' +
         '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button>';
     
-    // Body
     const body = document.createElement('div');
     body.className = 'modal-body';
     body.innerHTML = content;
     
-    // Footer
     const footer = document.createElement('div');
     footer.className = 'modal-footer';
     
@@ -227,7 +350,6 @@ function showModal(title, content, buttons = []) {
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     
-    // Close on overlay click
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) overlay.remove();
     });
@@ -235,51 +357,38 @@ function showModal(title, content, buttons = []) {
 
 function confirmDialog(message, onConfirm) {
     showModal('Επιβεβαίωση', '<p>' + message + '</p>', [
-        {
-            text: 'Ακύρωση',
-            class: 'btn-secondary'
-        },
-        {
-            text: 'Επιβεβαίωση',
-            class: 'btn-danger',
-            onClick: onConfirm
-        }
+        { text: 'Ακύρωση', class: 'btn-secondary' },
+        { text: 'Επιβεβαίωση', class: 'btn-danger', onClick: onConfirm }
     ]);
 }
 
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
-
-// Format date for display (DD-MM-YYYY)
 function formatDate(dateStr) {
     if (!dateStr) return '';
     return dateStr.split('-').reverse().join('-');
 }
 
-// Format date for input (YYYY-MM-DD)
 function formatDateForInput(dateStr) {
     if (!dateStr) return '';
     const parts = dateStr.split('-');
     if (parts.length === 3 && parts[0].length === 4) {
-        return dateStr; // Already in correct format
+        return dateStr;
     }
     return parts.reverse().join('-');
 }
 
-// Format currency
 function formatCurrency(amount) {
     return parseFloat(amount || 0).toFixed(2) + '€';
 }
 
-// Get Greek day name
 function getGreekDayName(dateStr) {
     const days = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'];
     const date = new Date(dateStr);
     return days[date.getDay()];
 }
 
-// Debounce function
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -293,45 +402,116 @@ function debounce(func, wait) {
 }
 
 // ============================================
-// NAVBAR COMPONENT
+// NAVIGATION RENDERING
 // ============================================
-function renderNavbar() {
+function renderNavigation() {
     const user = Auth.getCurrentUser();
     if (!user) return;
 
     const currentPage = window.location.pathname.split('/').pop();
     
+    // Desktop Navigation
     const navbar = document.getElementById('navbar');
-    if (!navbar) return;
+    if (navbar) {
+        let adminLinks = '';
+        if (user.role === 'admin') {
+            adminLinks = '<a href="activity-log.html" class="nav-link ' + (currentPage === 'activity-log.html' ? 'active' : '') + '">📝 Ιστορικό</a>' +
+                '<a href="backup.html" class="nav-link ' + (currentPage === 'backup.html' ? 'active' : '') + '">💾 Backup</a>' +
+                '<a href="users.html" class="nav-link ' + (currentPage === 'users.html' ? 'active' : '') + '">👤 Χρήστες</a>';
+        }
 
-    let adminLinks = '';
-    if (user.role === 'admin') {
-        adminLinks = '<a href="activity-log.html" class="nav-link ' + (currentPage === 'activity-log.html' ? 'active' : '') + '">📝 Ιστορικό</a>' +
-            '<a href="backup.html" class="nav-link ' + (currentPage === 'backup.html' ? 'active' : '') + '">💾 Backup</a>' +
-            '<a href="users.html" class="nav-link ' + (currentPage === 'users.html' ? 'active' : '') + '">👤 Χρήστες</a>';
-    }
-
-    navbar.innerHTML = '<div class="navbar-content">' +
-        '<div class="navbar-brand">' +
-            '<img src="banner.png" alt="Ζάχαρη" class="logo-nav">' +
-            '<span class="brand-text">Ζάχαρη</span>' +
-        '</div>' +
-        '<div class="navbar-menu">' +
+        navbar.innerHTML = '<div class="navbar-content">' +
             '<a href="dashboard.html" class="nav-link ' + (currentPage === 'dashboard.html' ? 'active' : '') + '">📊 Dashboard</a>' +
-            '<a href="order-form.html" class="nav-link ' + (currentPage === 'order-form.html' ? 'active' : '') + '">➕ Νέα Παραγγελία</a>' +
+            '<a href="order-form.html" class="nav-link ' + (currentPage === 'order-form.html' ? 'active' : '') + '">➕ Νέα</a>' +
             '<a href="orders-list.html" class="nav-link ' + (currentPage === 'orders-list.html' ? 'active' : '') + '">📋 Παραγγελίες</a>' +
             '<a href="calendar.html" class="nav-link ' + (currentPage === 'calendar.html' ? 'active' : '') + '">📅 Ημερολόγιο</a>' +
             '<a href="customers.html" class="nav-link ' + (currentPage === 'customers.html' ? 'active' : '') + '">👥 Πελάτες</a>' +
             adminLinks +
-        '</div>' +
-        '<div class="user-menu">' +
-            '<div class="user-info">' +
-                '<div class="user-name">' + user.full_name + '</div>' +
-                '<div class="user-role">' + (user.role === 'admin' ? 'Διαχειριστής' : 'Χρήστης') + '</div>' +
+        '</div>';
+    }
+
+    // Mobile Bottom Navigation
+    const bottomNav = document.getElementById('bottomNav');
+    if (bottomNav) {
+        bottomNav.innerHTML = 
+            '<a href="dashboard.html" class="bottom-nav-item ' + (currentPage === 'dashboard.html' ? 'active' : '') + '">' +
+                '<div class="bottom-nav-icon">🏠</div>' +
+                '<div class="bottom-nav-label">Home</div>' +
+            '</a>' +
+            '<a href="orders-list.html" class="bottom-nav-item ' + (currentPage === 'orders-list.html' ? 'active' : '') + '">' +
+                '<div class="bottom-nav-icon">📋</div>' +
+                '<div class="bottom-nav-label">Παραγγελίες</div>' +
+            '</a>' +
+            '<a href="customers.html" class="bottom-nav-item ' + (currentPage === 'customers.html' ? 'active' : '') + '">' +
+                '<div class="bottom-nav-icon">👥</div>' +
+                '<div class="bottom-nav-label">Πελάτες</div>' +
+            '</a>' +
+            '<a href="calendar.html" class="bottom-nav-item ' + (currentPage === 'calendar.html' ? 'active' : '') + '">' +
+                '<div class="bottom-nav-icon">📅</div>' +
+                '<div class="bottom-nav-label">Ημερολόγιο</div>' +
+            '</a>' +
+            '<div class="bottom-nav-item" onclick="showMobileMenu()">' +
+                '<div class="bottom-nav-icon">⋮</div>' +
+                '<div class="bottom-nav-label">Άλλα</div>' +
+            '</div>';
+    }
+
+    // Desktop User Menu
+    const userMenuTop = document.getElementById('userMenuTop');
+    if (userMenuTop) {
+        userMenuTop.innerHTML = 
+            '<div class="user-info-top">' +
+                '<div class="user-name-top">' + user.full_name + '</div>' +
+                '<div class="user-role-top">' + (user.role === 'admin' ? 'Διαχειριστής' : 'Χρήστης') + '</div>' +
             '</div>' +
-            '<button class="btn btn-sm btn-danger" onclick="Auth.logout()">Έξοδος</button>' +
-        '</div>' +
-    '</div>';
+            '<button class="btn btn-sm btn-danger" onclick="Auth.logout()">Έξοδος</button>';
+    }
+
+    // Mobile User Icon
+    const mobileUserIcon = document.getElementById('mobileUserIcon');
+    if (mobileUserIcon) {
+        mobileUserIcon.addEventListener('click', showMobileUserMenu);
+    }
+}
+
+function showMobileMenu() {
+    const user = Auth.getCurrentUser();
+    let adminItems = '';
+    
+    if (user && user.role === 'admin') {
+        adminItems = '<a href="activity-log.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50;">📝 Ιστορικό Ενεργειών</a>' +
+            '<a href="backup.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50;">💾 Backup & Restore</a>' +
+            '<a href="users.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50;">👤 Χρήστες</a>';
+    }
+    
+    const content = 
+        '<div style="padding:20px;">' +
+            '<h3 style="margin-bottom:20px; color:#2a5a5a;">Περισσότερα</h3>' +
+            adminItems +
+            '<a href="order-form.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50;">➕ Νέα Παραγγελία</a>' +
+        '</div>';
+    
+    showModal('Μενού', content, [
+        { text: 'Κλείσιμο', class: 'btn-secondary' }
+    ]);
+}
+
+function showMobileUserMenu() {
+    const user = Auth.getCurrentUser();
+    if (!user) return;
+    
+    const content = 
+        '<div style="text-align:center; padding:20px;">' +
+            '<div style="width:80px; height:80px; background:#2a5a5a; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 15px;">👤</div>' +
+            '<h3 style="margin-bottom:5px;">' + user.full_name + '</h3>' +
+            '<p style="color:#6c757d; margin-bottom:5px;">' + user.username + '</p>' +
+            '<span style="display:inline-block; padding:5px 15px; background:#2a5a5a; color:white; border-radius:20px; font-size:0.85rem;">' + (user.role === 'admin' ? 'Διαχειριστής' : 'Χρήστης') + '</span>' +
+        '</div>';
+    
+    showModal('Προφίλ', content, [
+        { text: 'Έξοδος', class: 'btn-danger', onClick: () => Auth.logout() },
+        { text: 'Κλείσιμο', class: 'btn-secondary' }
+    ]);
 }
 
 // ============================================
@@ -344,19 +524,43 @@ function renderAndPrint(htmlContent) {
         return;
     }
     
-    printArea.innerHTML = '<div style="text-align:center; margin-bottom:20px;">' +
-        '<img src="banner.png" style="max-width:250px;">' +
-        '</div>' + htmlContent;
-    
+    printArea.innerHTML = '<div style="text-align:center; margin-bottom:20px;"><img src="banner.png" style="max-width:250px;"></div>' + htmlContent;
     window.print();
+}
+
+// ============================================
+// PASSWORD TOGGLE
+// ============================================
+function initPasswordToggle() {
+    const passwordInputs = document.querySelectorAll('input[type="password"]');
+    passwordInputs.forEach(input => {
+        if (input.parentElement.classList.contains('password-wrapper')) return;
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'password-wrapper';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+        
+        const toggle = document.createElement('span');
+        toggle.className = 'password-toggle';
+        toggle.innerHTML = '👁️';
+        toggle.addEventListener('click', () => {
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.innerHTML = '🙈';
+            } else {
+                input.type = 'password';
+                toggle.innerHTML = '👁️';
+            }
+        });
+        wrapper.appendChild(toggle);
+    });
 }
 
 // ============================================
 // INITIALIZATION
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Render navbar if element exists
-    if (document.getElementById('navbar')) {
-        renderNavbar();
-    }
+    renderNavigation();
+    initPasswordToggle();
 });

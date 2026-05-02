@@ -4,7 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Σύνδεση - Ζαχαροπλαστείο Ζάχαρη</title>
-    <link rel="stylesheet" href="modern-style.css">
+    <link rel="stylesheet" href="v3-modern-style.css">
+    <style>
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 450px;
+            animation: slideUp 0.5s ease;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-login {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .login-title {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+    </style>
 </head>
 <body>
     <div class="login-wrapper">
@@ -17,14 +58,14 @@
 
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label class="form-label">📧 Email</label>
+                    <label class="form-label">👤 Username</label>
                     <input 
-                        type="email" 
-                        id="email" 
+                        type="text" 
+                        id="username" 
                         class="form-control" 
-                        placeholder="admin@zachari.gr"
+                        placeholder="Εισάγετε το username σας"
                         required
-                        autocomplete="email"
+                        autocomplete="username"
                     >
                 </div>
 
@@ -50,19 +91,20 @@
                     <strong>Demo Credentials:</strong>
                 </p>
                 <p style="color: #6c757d; font-size: 0.8rem; margin: 5px 0;">
-                    👤 Admin: admin@zachari.gr / admin123
+                    👤 Admin: admin / admin123
                 </p>
                 <p style="color: #6c757d; font-size: 0.8rem; margin: 5px 0;">
-                    👤 User: user@zachari.gr / user123
+                    👤 User: user / user123
                 </p>
             </div>
         </div>
     </div>
 
+    <div id="printArea"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js"></script>
+    <script src="v3-app.js"></script>
     <script>
-        // Redirect if already logged in
         if (Auth.isAuthenticated()) {
             window.location.href = 'dashboard.html';
         }
@@ -70,24 +112,18 @@
         async function handleLogin(e) {
             e.preventDefault();
             
-            const email = document.getElementById('email').value.trim();
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const btn = document.getElementById('loginBtn');
 
             btn.disabled = true;
             btn.innerHTML = '<div class="spinner spinner-sm"></div> Σύνδεση...';
 
-            await Auth.login(email, password);
+            await Auth.login(username, password);
 
             btn.disabled = false;
             btn.innerHTML = '🔑 Σύνδεση';
         }
-
-        // Auto-fill demo credentials on demo button click (optional)
-        document.addEventListener('DOMContentLoaded', () => {
-            const demoButtons = document.querySelectorAll('[style*="Demo Credentials"]');
-            // You can add click handlers to auto-fill credentials if desired
-        });
     </script>
 </body>
 </html>

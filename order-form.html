@@ -4,10 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Παραγγελία - Ζαχαροπλαστείο Ζάχαρη</title>
-    <link rel="stylesheet" href="modern-style.css">
+    <link rel="stylesheet" href="v3-modern-style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
 </head>
 <body>
+    <div class="top-header">
+        <div class="header-content">
+            <div style="width: 100px;"></div>
+            <div class="logo-container">
+                <a href="dashboard.html" class="logo-link">
+                    <img src="banner.png" alt="Ζάχαρη" class="logo-nav">
+                </a>
+            </div>
+            <div class="user-menu-top" id="userMenuTop"></div>
+        </div>
+    </div>
+
     <nav id="navbar" class="navbar"></nav>
+    <div class="mobile-user-icon" id="mobileUserIcon">👤</div>
 
     <div class="container">
         <div class="card">
@@ -19,20 +34,19 @@
                     <input type="hidden" id="orderId">
                     <input type="hidden" id="customerId">
 
-                    <!-- Customer Search with Autocomplete -->
+                    <!-- Customer Search -->
                     <div class="form-group">
-                        <label class="form-label">🔍 Αναζήτηση Πελάτη (Προαιρετικό)</label>
+                        <label class="form-label">🔍 Αναζήτηση Πελάτη</label>
                         <div class="autocomplete-wrapper">
                             <input 
                                 type="text" 
                                 id="customerSearch" 
                                 class="form-control" 
-                                placeholder="Πληκτρολογήστε όνομα ή τηλέφωνο..."
+                                placeholder="Όνομα ή τηλέφωνο..."
                                 autocomplete="off"
                             >
                             <div id="autocompleteResults" class="autocomplete-results hidden"></div>
                         </div>
-                        <small style="color: #6c757d;">Αν ο πελάτης υπάρχει, τα στοιχεία θα συμπληρωθούν αυτόματα</small>
                     </div>
 
                     <div class="form-row">
@@ -52,21 +66,19 @@
                             <input type="tel" id="phone" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Ημερομηνία Παράδοσης *</label>
-                            <input type="date" id="deliveryDate" class="form-control" required>
+                            <label class="form-label">Email (προαιρετικό)</label>
+                            <input type="email" id="email" class="form-control" placeholder="για auto-sync στο πελατολόγιο">
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Περιγραφή Παραγγελίας *</label>
-                        <textarea id="description" class="form-control" rows="6" required placeholder="π.χ. Τούρτα γενεθλίων με σοκολάτα, 2 κιλά..."></textarea>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Τοποθεσία Παράδοσης</label>
+                            <label class="form-label">Ημερομηνία Παράδοσης *</label>
+                            <input type="text" id="deliveryDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Τοποθεσία</label>
                             <select id="locationType" class="form-control">
-                                <option value="Παραλαβή από το Κατάστημα">Παραλαβή από το Κατάστημα</option>
                                 <option value="Σπίτι">Σπίτι</option>
                                 <option value="Παιδότοπος">Παιδότοπος</option>
                                 <option value="Κτήμα">Κτήμα</option>
@@ -75,10 +87,24 @@
                                 <option value="Άλλο">Άλλο</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Διεύθυνση</label>
-                            <input type="text" id="address" class="form-control" placeholder="Οδός, αριθμός, περιοχή">
-                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Διεύθυνση</label>
+                        <input type="text" id="address" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Περιγραφή *</label>
+                        <textarea id="description" class="form-control" rows="5" required></textarea>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="form-group">
+                        <label class="form-label">📷 Φωτογραφίες (προαιρετικό)</label>
+                        <input type="file" id="imageUpload" class="form-control" accept="image/jpeg,image/jpg,image/png" multiple>
+                        <small style="color: #6c757d;">Max 5MB ανά αρχείο, JPEG/PNG</small>
+                        <div id="imagePreview" class="image-gallery" style="margin-top: 10px;"></div>
                     </div>
 
                     <div class="form-row">
@@ -102,38 +128,46 @@
                         </select>
                     </div>
 
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <strong>Υπόλοιπο προς πληρωμή:</strong>
-                        <span id="remainingAmount" style="font-size: 1.3rem; color: #2a5a5a; font-weight: bold;">0.00€</span>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                        <strong>Υπόλοιπο:</strong>
+                        <span id="remainingAmount" style="font-size: 1.2rem; color: #2a5a5a; font-weight: bold;">0.00€</span>
                     </div>
 
                     <div class="btn-group">
-                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                            ✅ Αποθήκευση
-                        </button>
-                        <button type="button" id="printBtn" class="btn btn-secondary hidden" onclick="printCurrentOrder()">
-                            🖨️ Εκτύπωση
-                        </button>
-                        <a href="orders-list.html" class="btn btn-outline">
-                            ❌ Ακύρωση
-                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">✅ Αποθήκευση</button>
+                        <button type="button" id="printBtn" class="btn btn-secondary hidden" onclick="printCurrentOrder()">🖨️ Εκτύπωση</button>
+                        <a href="orders-list.html" class="btn btn-outline">❌ Ακύρωση</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    <nav class="bottom-nav" id="bottomNav"></nav>
+    <a href="order-form.html" class="fab">+</a>
+
     <div id="printArea"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/gr.js"></script>
+    <script src="v3-app.js"></script>
     <script>
         Auth.requireAuth();
 
         let allCustomers = [];
         let currentOrder = null;
+        let uploadedImages = [];
 
-        // Calculate remaining amount
+        // Flatpickr initialization
+        flatpickr("#deliveryDate", {
+            locale: "gr",
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            defaultDate: new Date()
+        });
+
+        // Calculate remaining
         document.getElementById('totalPrice').addEventListener('input', updateRemaining);
         document.getElementById('deposit').addEventListener('input', updateRemaining);
 
@@ -142,6 +176,26 @@
             const deposit = parseFloat(document.getElementById('deposit').value) || 0;
             const remaining = total - deposit;
             document.getElementById('remainingAmount').textContent = remaining.toFixed(2) + '€';
+        }
+
+        // Image upload preview
+        document.getElementById('imageUpload').addEventListener('change', handleImageSelect);
+
+        function handleImageSelect(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.innerHTML = '<img src="' + event.target.result + '" alt="Preview">';
+                    preview.appendChild(item);
+                };
+                reader.readAsDataURL(file);
+            });
         }
 
         // Customer autocomplete
@@ -153,13 +207,11 @@
                 return;
             }
 
-            // Fetch customers if not loaded
             if (allCustomers.length === 0) {
                 const { data } = await _supabase.from('customers').select('*');
                 allCustomers = data || [];
             }
 
-            // Filter customers
             const filtered = allCustomers.filter(c => 
                 c.first_name.toLowerCase().includes(searchTerm) ||
                 c.last_name.toLowerCase().includes(searchTerm) ||
@@ -177,35 +229,32 @@
                 return;
             }
 
-            resultsDiv.innerHTML = customers.slice(0, 5).map(c => `
-                <div class="autocomplete-item" onclick="selectCustomer('${c.id}')">
-                    <strong>${c.last_name} ${c.first_name}</strong><br>
-                    <small>📞 ${c.phone}</small>
-                </div>
-            `).join('');
+            resultsDiv.innerHTML = customers.slice(0, 5).map(c => 
+                '<div class="autocomplete-item" onclick="selectCustomer(\'' + c.id + '\')">' +
+                    '<strong>' + c.last_name + ' ' + c.first_name + '</strong><br>' +
+                    '<small>📞 ' + c.phone + '</small>' +
+                '</div>'
+            ).join('');
 
             resultsDiv.classList.remove('hidden');
         }
 
-        async function selectCustomer(customerId) {
+        function selectCustomer(customerId) {
             const customer = allCustomers.find(c => c.id === customerId);
             if (!customer) return;
 
-            // Fill form with customer data
             document.getElementById('customerId').value = customer.id;
             document.getElementById('firstName').value = customer.first_name;
             document.getElementById('lastName').value = customer.last_name;
             document.getElementById('phone').value = customer.phone;
+            document.getElementById('email').value = customer.email || '';
             document.getElementById('address').value = customer.address || '';
-            document.getElementById('customerSearch').value = `${customer.last_name} ${customer.first_name}`;
+            document.getElementById('customerSearch').value = customer.last_name + ' ' + customer.first_name;
 
-            // Hide autocomplete
             document.getElementById('autocompleteResults').classList.add('hidden');
-
-            showToast(`Επιλέχθηκε: ${customer.last_name} ${customer.first_name}`, 'success');
+            showToast('Επιλέχθηκε: ' + customer.last_name + ' ' + customer.first_name, 'success');
         }
 
-        // Close autocomplete when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.autocomplete-wrapper')) {
                 document.getElementById('autocompleteResults').classList.add('hidden');
@@ -221,12 +270,14 @@
 
             const orderId = document.getElementById('orderId').value;
             const customerId = document.getElementById('customerId').value;
+            const email = document.getElementById('email').value.trim();
 
             const orderData = {
                 customer_id: customerId || null,
                 first_name: document.getElementById('firstName').value.trim(),
                 last_name: document.getElementById('lastName').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
+                email: email || null,
                 description: document.getElementById('description').value.trim(),
                 delivery_date: document.getElementById('deliveryDate').value,
                 location_type: document.getElementById('locationType').value,
@@ -239,8 +290,9 @@
             };
 
             try {
+                let savedOrderId = orderId;
+
                 if (orderId) {
-                    // Update existing order
                     const { data, error } = await _supabase
                         .from('orders')
                         .update(orderData)
@@ -249,14 +301,9 @@
                         .single();
 
                     if (error) throw error;
-
-                    await Auth.logActivity('update', 'order', orderId, { order: orderData });
-                    showToast('Η παραγγελία ενημερώθηκε επιτυχώς!', 'success');
-                    
                     currentOrder = data;
-
+                    await Auth.logActivity('update', 'order', orderId, { order: orderData });
                 } else {
-                    // Create new order
                     orderData.created_at = new Date().toISOString();
                     
                     const { data, error } = await _supabase
@@ -266,18 +313,37 @@
                         .single();
 
                     if (error) throw error;
-
-                    await Auth.logActivity('create', 'order', data.id, { order: orderData });
-                    showToast('Η παραγγελία αποθηκεύτηκε επιτυχώς!', 'success');
-                    
                     currentOrder = data;
+                    savedOrderId = data.id;
+                    
                     document.getElementById('orderId').value = data.id;
                     document.getElementById('formTitle').textContent = '📝 Επεξεργασία Παραγγελίας';
                     document.getElementById('printBtn').classList.remove('hidden');
+                    
+                    await Auth.logActivity('create', 'order', data.id, { order: orderData });
                 }
 
-                // Update or create customer
+                // Upload images
+                const imageFiles = document.getElementById('imageUpload').files;
+                if (imageFiles.length > 0) {
+                    uploadedImages = await FileUpload.uploadMultiple(Array.from(imageFiles), savedOrderId);
+                    if (uploadedImages.length > 0) {
+                        await _supabase
+                            .from('orders')
+                            .update({ images: uploadedImages })
+                            .eq('id', savedOrderId);
+                    }
+                }
+
+                // Email sync
+                if (email) {
+                    await syncCustomerEmail(orderData.phone, email, orderData.first_name, orderData.last_name);
+                }
+
+                // Update customer
                 await updateCustomerRecord(orderData);
+
+                showToast('Η παραγγελία αποθηκεύτηκε!', 'success');
 
             } catch (err) {
                 showToast('Σφάλμα: ' + err.message, 'error');
@@ -289,7 +355,6 @@
 
         async function updateCustomerRecord(orderData) {
             try {
-                // Check if customer exists by phone
                 const { data: existing } = await _supabase
                     .from('customers')
                     .select('*')
@@ -297,7 +362,6 @@
                     .single();
 
                 if (existing) {
-                    // Update existing customer
                     const { data: orders } = await _supabase
                         .from('orders')
                         .select('total_price')
@@ -311,21 +375,21 @@
                         .update({
                             first_name: orderData.first_name,
                             last_name: orderData.last_name,
+                            email: orderData.email,
                             address: orderData.address,
                             total_orders: totalOrders,
                             total_spent: totalSpent,
                             updated_at: new Date().toISOString()
                         })
                         .eq('id', existing.id);
-
                 } else {
-                    // Create new customer
                     await _supabase
                         .from('customers')
                         .insert([{
                             first_name: orderData.first_name,
                             last_name: orderData.last_name,
                             phone: orderData.phone,
+                            email: orderData.email,
                             address: orderData.address,
                             total_orders: 1,
                             total_spent: orderData.total_price
@@ -340,22 +404,17 @@
             showLoading();
 
             try {
-                const { data, error } = await _supabase
-                    .from('orders')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
+                const { data, error } = await _supabase.from('orders').select('*').eq('id', id).single();
                 if (error) throw error;
 
                 currentOrder = data;
 
-                // Fill form
                 document.getElementById('orderId').value = data.id;
                 document.getElementById('customerId').value = data.customer_id || '';
                 document.getElementById('firstName').value = data.first_name;
                 document.getElementById('lastName').value = data.last_name;
                 document.getElementById('phone').value = data.phone;
+                document.getElementById('email').value = data.email || '';
                 document.getElementById('description').value = data.description;
                 document.getElementById('deliveryDate').value = data.delivery_date;
                 document.getElementById('locationType').value = data.location_type;
@@ -364,13 +423,17 @@
                 document.getElementById('deposit').value = data.deposit;
                 document.getElementById('status').value = data.status || 'pending';
 
+                if (data.images && data.images.length > 0) {
+                    renderImageGallery(data.images, 'imagePreview');
+                }
+
                 updateRemaining();
 
-                document.getElementById('formTitle').textContent = '📝 Επεξεργασία Παραγγελίας';
+                document.getElementById('formTitle').textContent = '📝 Επεξεργασία';
                 document.getElementById('printBtn').classList.remove('hidden');
 
             } catch (err) {
-                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+                showToast('Σφάλμα: ' + err.message, 'error');
             }
 
             hideLoading();
@@ -378,55 +441,47 @@
 
         function printCurrentOrder() {
             if (!currentOrder) {
-                showToast('Αποθηκεύστε πρώτα την παραγγελία', 'warning');
+                showToast('Αποθηκεύστε πρώτα', 'warning');
                 return;
             }
 
             const order = currentOrder;
-            const html = `
-                <h2 style="text-align:center; border-bottom:2px solid #2a5a5a; padding-bottom: 10px;">
-                    ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ
-                </h2>
-                <p><strong>Πελάτης:</strong> ${order.last_name} ${order.first_name}</p>
-                <p><strong>Τηλέφωνο:</strong> ${order.phone}</p>
-                <p><strong>Ημερομηνία Παράδοσης:</strong> ${formatDate(order.delivery_date)} (${getGreekDayName(order.delivery_date)})</p>
-                <p><strong>Τοποθεσία:</strong> ${order.location_type}</p>
-                ${order.address ? `<p><strong>Διεύθυνση:</strong> ${order.address}</p>` : ''}
-                
-                <div style="border:1px solid #ccc; padding:15px; margin:20px 0; min-height:100px; background: #f9f9f9;">
-                    <strong>ΠΕΡΙΓΡΑΦΗ ΠΑΡΑΓΓΕΛΙΑΣ:</strong><br><br>
-                    ${order.description.replace(/\n/g, '<br>')}
-                </div>
-                
-                <div style="text-align:right; margin-top: 30px;">
-                    <p style="font-size: 1.1rem;"><strong>Σύνολο:</strong> ${formatCurrency(order.total_price)}</p>
-                    <p style="font-size: 1.1rem;"><strong>Προκαταβολή:</strong> ${formatCurrency(order.deposit)}</p>
-                    <h2 style="color:#2a5a5a; border-top: 2px solid #2a5a5a; padding-top: 10px; margin-top: 10px;">
-                        Υπόλοιπο: ${formatCurrency(order.total_price - order.deposit)}
-                    </h2>
-                </div>
-                
-                <div style="margin-top: 50px; text-align: center; font-size: 0.9rem; color: #666;">
-                    <p>Σας ευχαριστούμε για την προτίμησή σας!</p>
-                    <p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p>
-                </div>
-            `;
+            let html = '<h2 style="text-align:center; border-bottom:2px solid #2a5a5a; padding-bottom: 10px;">ΑΠΟΔΕΙΞΗ ΠΑΡΑΓΓΕΛΙΑΣ</h2>' +
+                '<p><strong>Πελάτης:</strong> ' + order.last_name + ' ' + order.first_name + '</p>' +
+                '<p><strong>Τηλέφωνο:</strong> ' + order.phone + '</p>' +
+                (order.email ? '<p><strong>Email:</strong> ' + order.email + '</p>' : '') +
+                '<p><strong>Ημερομηνία:</strong> ' + formatDate(order.delivery_date) + ' (' + getGreekDayName(order.delivery_date) + ')</p>' +
+                '<p><strong>Τοποθεσία:</strong> ' + order.location_type + '</p>' +
+                (order.address ? '<p><strong>Διεύθυνση:</strong> ' + order.address + '</p>' : '') +
+                '<div style="border:1px solid #ccc; padding:15px; margin:20px 0; background: #f9f9f9;">' +
+                '<strong>ΠΕΡΙΓΡΑΦΗ:</strong><br><br>' + order.description.replace(/\n/g, '<br>') + '</div>';
+
+            if (order.images && order.images.length > 0) {
+                html += '<div style="margin:20px 0;"><strong>Φωτογραφίες:</strong><br>' +
+                    '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px;">';
+                order.images.forEach(img => {
+                    html += '<img src="' + img + '" style="width:100%; border:1px solid #ddd; border-radius:4px;">';
+                });
+                html += '</div></div>';
+            }
+
+            html += '<div style="text-align:right; margin-top: 30px;">' +
+                '<p style="font-size: 1.1rem;"><strong>Σύνολο:</strong> ' + formatCurrency(order.total_price) + '</p>' +
+                '<p style="font-size: 1.1rem;"><strong>Προκαταβολή:</strong> ' + formatCurrency(order.deposit) + '</p>' +
+                '<h2 style="color:#2a5a5a; border-top: 2px solid #2a5a5a; padding-top: 10px;">Υπόλοιπο: ' + formatCurrency(order.total_price - order.deposit) + '</h2></div>' +
+                '<div style="margin-top: 50px; text-align: center; font-size: 0.9rem; color: #666;">' +
+                '<p>Σας ευχαριστούμε!</p><p>Ζαχαροπλαστείο ΖΑΧΑΡΗ - Από το 2012</p></div>';
 
             renderAndPrint(html);
             Auth.logActivity('print', 'order', order.id, { type: 'single_order' });
         }
 
-        // Check for edit parameter in URL
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
             const editId = params.get('edit');
             
             if (editId) {
                 loadOrderToEdit(editId);
-            } else {
-                // Set default date to today
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('deliveryDate').value = today;
             }
         };
     </script>

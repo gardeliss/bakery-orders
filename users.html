@@ -3,70 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Διαχείριση Χρηστών - Ζαχαροπλαστείο Ζάχαρη</title>
-    <link rel="stylesheet" href="modern-style.css">
+    <title>Χρήστες - Ζαχαροπλαστείο Ζάχαρη</title>
+    <link rel="stylesheet" href="v3-modern-style.css">
 </head>
 <body>
+    <div class="top-header">
+        <div class="header-content">
+            <div style="width: 100px;"></div>
+            <div class="logo-container">
+                <a href="dashboard.html" class="logo-link">
+                    <img src="banner.png" alt="Ζάχαρη" class="logo-nav">
+                </a>
+            </div>
+            <div class="user-menu-top" id="userMenuTop"></div>
+        </div>
+    </div>
+
     <nav id="navbar" class="navbar"></nav>
+    <div class="mobile-user-icon" id="mobileUserIcon">👤</div>
 
     <div class="container">
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">👤 Διαχείριση Χρηστών</h2>
-                <button onclick="showAddUserModal()" class="btn btn-primary">
-                    ➕ Νέος Χρήστης
-                </button>
+                <button onclick="showAddUserModal()" class="btn btn-primary">➕ Νέος Χρήστης</button>
             </div>
             <div class="card-body">
-                <!-- Users Table -->
                 <div class="table-wrapper">
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Όνομα</th>
+                                <th>Username</th>
+                                <th>Ονοματεπώνυμο</th>
                                 <th>Email</th>
                                 <th>Ρόλος</th>
-                                <th>Ημερομηνία Δημιουργίας</th>
+                                <th>Ενεργός</th>
                                 <th>Ενέργειες</th>
                             </tr>
                         </thead>
-                        <tbody id="usersTableBody">
-                            <!-- Will be populated by JavaScript -->
-                        </tbody>
+                        <tbody id="usersTableBody"></tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- User Statistics -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">📊 Στατιστικά Χρηστών</h2>
-            </div>
-            <div class="card-body">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-value" id="totalUsers">0</div>
-                        <div class="stat-label">Σύνολο Χρηστών</div>
-                    </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
-                        <div class="stat-icon">👑</div>
-                        <div class="stat-value" id="totalAdmins">0</div>
-                        <div class="stat-label">Διαχειριστές</div>
-                    </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
-                        <div class="stat-icon">👤</div>
-                        <div class="stat-value" id="totalRegularUsers">0</div>
-                        <div class="stat-label">Απλοί Χρήστες</div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <nav class="bottom-nav" id="bottomNav"></nav>
+    <a href="order-form.html" class="fab">+</a>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js"></script>
+    <script src="v3-app.js"></script>
     <script>
         Auth.requireAuth();
         Auth.requireAdmin();
@@ -86,7 +72,6 @@
 
                 allUsers = data || [];
                 displayUsers();
-                updateStatistics();
 
             } catch (err) {
                 showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
@@ -99,134 +84,87 @@
             const tbody = document.getElementById('usersTableBody');
 
             if (allUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #6c757d; padding: 40px;">Δεν υπάρχουν χρήστες</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #6c757d; padding: 30px;">Δεν υπάρχουν χρήστες</td></tr>';
                 return;
             }
 
-            const currentUserId = Auth.getCurrentUser().id;
-
             tbody.innerHTML = allUsers.map(user => {
-                const dateTime = new Date(user.created_at).toLocaleDateString('el-GR');
-                const isCurrentUser = user.id === currentUserId;
+                const roleBadge = user.role === 'admin' 
+                    ? '<span class="badge badge-danger">Admin</span>' 
+                    : '<span class="badge badge-info">User</span>';
+                
+                const activeBadge = user.is_active 
+                    ? '<span class="badge badge-success">✓ Ενεργός</span>' 
+                    : '<span class="badge badge-secondary">✗ Ανενεργός</span>';
 
-                return `
-                    <tr>
-                        <td>
-                            <strong>${user.full_name}</strong>
-                            ${isCurrentUser ? '<span class="badge badge-info" style="margin-left: 8px;">Εσείς</span>' : ''}
-                        </td>
-                        <td>${user.email}</td>
-                        <td>
-                            <span class="badge badge-${user.role === 'admin' ? 'danger' : 'info'}">
-                                ${user.role === 'admin' ? '👑 Διαχειριστής' : '👤 Χρήστης'}
-                            </span>
-                        </td>
-                        <td>${dateTime}</td>
-                        <td>
-                            <div style="display: flex; gap: 8px;">
-                                <button onclick="editUser('${user.id}')" class="btn btn-sm btn-secondary">
-                                    📝 Επεξεργασία
-                                </button>
-                                ${!isCurrentUser ? `
-                                    <button onclick="deleteUser('${user.id}')" class="btn btn-sm btn-danger">
-                                        🗑️ Διαγραφή
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                return '<tr>' +
+                    '<td><strong>' + user.username + '</strong></td>' +
+                    '<td>' + user.full_name + '</td>' +
+                    '<td>' + user.email + '</td>' +
+                    '<td>' + roleBadge + '</td>' +
+                    '<td>' + activeBadge + '</td>' +
+                    '<td>' +
+                        '<div style="display: flex; gap: 6px;">' +
+                            '<button onclick="editUser(\'' + user.id + '\')" class="btn btn-sm btn-secondary">📝</button>' +
+                            '<button onclick="toggleUserStatus(\'' + user.id + '\')" class="btn btn-sm btn-warning">' + (user.is_active ? '🔒' : '🔓') + '</button>' +
+                            '<button onclick="deleteUser(\'' + user.id + '\')" class="btn btn-sm btn-danger">🗑️</button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
             }).join('');
         }
 
-        function updateStatistics() {
-            const totalUsers = allUsers.length;
-            const totalAdmins = allUsers.filter(u => u.role === 'admin').length;
-            const totalRegularUsers = allUsers.filter(u => u.role === 'user').length;
-
-            document.getElementById('totalUsers').textContent = totalUsers;
-            document.getElementById('totalAdmins').textContent = totalAdmins;
-            document.getElementById('totalRegularUsers').textContent = totalRegularUsers;
-        }
-
         function showAddUserModal() {
-            const modalContent = `
-                <form id="addUserForm" onsubmit="createUser(event)">
-                    <div class="form-group">
-                        <label class="form-label">Ονοματεπώνυμο *</label>
-                        <input type="text" id="newFullName" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Email *</label>
-                        <input type="email" id="newEmail" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Κωδικός *</label>
-                        <input type="password" id="newPassword" class="form-control" required minlength="6">
-                        <small style="color: #6c757d;">Τουλάχιστον 6 χαρακτήρες</small>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Ρόλος</label>
-                        <select id="newRole" class="form-control">
-                            <option value="user">Χρήστης</option>
-                            <option value="admin">Διαχειριστής</option>
-                        </select>
-                    </div>
-                </form>
-            `;
+            const modalContent = '<form id="addUserForm" onsubmit="addUser(event)">' +
+                '<div class="form-group"><label class="form-label">Username *</label>' +
+                '<input type="text" id="newUsername" class="form-control" required placeholder="Μοναδικό username"></div>' +
+                '<div class="form-group"><label class="form-label">Ονοματεπώνυμο *</label>' +
+                '<input type="text" id="newFullName" class="form-control" required></div>' +
+                '<div class="form-group"><label class="form-label">Email *</label>' +
+                '<input type="email" id="newEmail" class="form-control" required></div>' +
+                '<div class="form-group"><label class="form-label">Κωδικός *</label>' +
+                '<input type="password" id="newPassword" class="form-control" required minlength="6"></div>' +
+                '<div class="form-group"><label class="form-label">Ρόλος</label>' +
+                '<select id="newRole" class="form-control">' +
+                    '<option value="user">User</option>' +
+                    '<option value="admin">Admin</option>' +
+                '</select></div>' +
+                '</form>';
 
             showModal('➕ Νέος Χρήστης', modalContent, [
                 { text: 'Ακύρωση', class: 'btn-secondary' },
-                { 
-                    text: 'Δημιουργία', 
-                    class: 'btn-primary',
-                    onClick: () => {
-                        document.getElementById('addUserForm').requestSubmit();
-                    }
-                }
+                { text: 'Δημιουργία', class: 'btn-primary', onClick: () => { document.getElementById('addUserForm').requestSubmit(); }}
             ]);
         }
 
-        async function createUser(e) {
+        async function addUser(e) {
             e.preventDefault();
             showLoading();
 
             const userData = {
+                username: document.getElementById('newUsername').value.trim(),
                 full_name: document.getElementById('newFullName').value.trim(),
                 email: document.getElementById('newEmail').value.trim(),
-                password_hash: document.getElementById('newPassword').value, // In production, hash this!
-                role: document.getElementById('newRole').value
+                password_hash: document.getElementById('newPassword').value,
+                role: document.getElementById('newRole').value,
+                is_active: true,
+                created_at: new Date().toISOString()
             };
 
             try {
-                // Check if email already exists
-                const { data: existing } = await _supabase
-                    .from('users')
-                    .select('id')
-                    .eq('email', userData.email)
-                    .single();
-
-                if (existing) {
-                    throw new Error('Αυτό το email χρησιμοποιείται ήδη');
-                }
-
-                // Insert new user
-                const { error } = await _supabase
-                    .from('users')
-                    .insert([userData]);
-
+                const { data, error } = await _supabase.from('users').insert([userData]).select();
                 if (error) throw error;
 
-                await Auth.logActivity('create', 'user', null, { 
-                    email: userData.email,
-                    role: userData.role
-                });
-
-                showToast('Ο χρήστης δημιουργήθηκε επιτυχώς!', 'success');
+                await Auth.logActivity('create', 'user', data[0].id, { username: userData.username });
+                showToast('Ο χρήστης δημιουργήθηκε!', 'success');
                 loadUsers();
 
             } catch (err) {
-                showToast('Σφάλμα: ' + err.message, 'error');
+                if (err.message.includes('duplicate') || err.message.includes('unique')) {
+                    showToast('Το username ή email υπάρχει ήδη', 'error');
+                } else {
+                    showToast('Σφάλμα: ' + err.message, 'error');
+                }
             }
 
             hideLoading();
@@ -236,40 +174,25 @@
             const user = allUsers.find(u => u.id === userId);
             if (!user) return;
 
-            const modalContent = `
-                <form id="editUserForm" onsubmit="saveUser(event, '${userId}')">
-                    <div class="form-group">
-                        <label class="form-label">Ονοματεπώνυμο *</label>
-                        <input type="text" id="editFullName" class="form-control" value="${user.full_name}" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Email *</label>
-                        <input type="email" id="editEmail" class="form-control" value="${user.email}" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Νέος Κωδικός (προαιρετικό)</label>
-                        <input type="password" id="editPassword" class="form-control" minlength="6">
-                        <small style="color: #6c757d;">Αφήστε κενό για να μην αλλάξει</small>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Ρόλος</label>
-                        <select id="editRole" class="form-control">
-                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>Χρήστης</option>
-                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Διαχειριστής</option>
-                        </select>
-                    </div>
-                </form>
-            `;
+            const modalContent = '<form id="editUserForm" onsubmit="saveUser(event, \'' + userId + '\')">' +
+                '<div class="form-group"><label class="form-label">Username *</label>' +
+                '<input type="text" id="editUsername" class="form-control" value="' + user.username + '" required></div>' +
+                '<div class="form-group"><label class="form-label">Ονοματεπώνυμο *</label>' +
+                '<input type="text" id="editFullName" class="form-control" value="' + user.full_name + '" required></div>' +
+                '<div class="form-group"><label class="form-label">Email *</label>' +
+                '<input type="email" id="editEmail" class="form-control" value="' + user.email + '" required></div>' +
+                '<div class="form-group"><label class="form-label">Νέος Κωδικός (προαιρετικά)</label>' +
+                '<input type="password" id="editPassword" class="form-control" placeholder="Αφήστε κενό για να μην αλλάξει"></div>' +
+                '<div class="form-group"><label class="form-label">Ρόλος</label>' +
+                '<select id="editRole" class="form-control">' +
+                    '<option value="user" ' + (user.role === 'user' ? 'selected' : '') + '>User</option>' +
+                    '<option value="admin" ' + (user.role === 'admin' ? 'selected' : '') + '>Admin</option>' +
+                '</select></div>' +
+                '</form>';
 
             showModal('📝 Επεξεργασία Χρήστη', modalContent, [
                 { text: 'Ακύρωση', class: 'btn-secondary' },
-                { 
-                    text: 'Αποθήκευση', 
-                    class: 'btn-primary',
-                    onClick: () => {
-                        document.getElementById('editUserForm').requestSubmit();
-                    }
-                }
+                { text: 'Αποθήκευση', class: 'btn-primary', onClick: () => { document.getElementById('editUserForm').requestSubmit(); }}
             ]);
         }
 
@@ -278,42 +201,58 @@
             showLoading();
 
             const userData = {
+                username: document.getElementById('editUsername').value.trim(),
                 full_name: document.getElementById('editFullName').value.trim(),
                 email: document.getElementById('editEmail').value.trim(),
-                role: document.getElementById('editRole').value
+                role: document.getElementById('editRole').value,
+                updated_at: new Date().toISOString()
             };
 
             const newPassword = document.getElementById('editPassword').value;
             if (newPassword) {
-                userData.password_hash = newPassword; // In production, hash this!
+                userData.password_hash = newPassword;
             }
 
             try {
-                // Check if email is already used by another user
-                const { data: existing } = await _supabase
-                    .from('users')
-                    .select('id')
-                    .eq('email', userData.email)
-                    .neq('id', userId)
-                    .single();
+                const { error } = await _supabase.from('users').update(userData).eq('id', userId);
+                if (error) throw error;
 
-                if (existing) {
-                    throw new Error('Αυτό το email χρησιμοποιείται ήδη από άλλο χρήστη');
-                }
+                await Auth.logActivity('update', 'user', userId, { username: userData.username });
+                showToast('Ο χρήστης ενημερώθηκε!', 'success');
+                loadUsers();
 
+            } catch (err) {
+                showToast('Σφάλμα: ' + err.message, 'error');
+            }
+
+            hideLoading();
+        }
+
+        async function toggleUserStatus(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            const currentUser = Auth.getCurrentUser();
+            if (currentUser.id === userId) {
+                showToast('Δεν μπορείτε να απενεργοποιήσετε τον εαυτό σας!', 'warning');
+                return;
+            }
+
+            showLoading();
+
+            try {
                 const { error } = await _supabase
                     .from('users')
-                    .update(userData)
+                    .update({ is_active: !user.is_active })
                     .eq('id', userId);
 
                 if (error) throw error;
 
                 await Auth.logActivity('update', 'user', userId, { 
-                    email: userData.email,
-                    role: userData.role
+                    action: user.is_active ? 'deactivated' : 'activated' 
                 });
 
-                showToast('Ο χρήστης ενημερώθηκε επιτυχώς!', 'success');
+                showToast(user.is_active ? 'Ο χρήστης απενεργοποιήθηκε' : 'Ο χρήστης ενεργοποιήθηκε', 'success');
                 loadUsers();
 
             } catch (err) {
@@ -327,29 +266,27 @@
             const user = allUsers.find(u => u.id === userId);
             if (!user) return;
 
+            const currentUser = Auth.getCurrentUser();
+            if (currentUser.id === userId) {
+                showToast('Δεν μπορείτε να διαγράψετε τον εαυτό σας!', 'warning');
+                return;
+            }
+
             confirmDialog(
-                `Είστε σίγουροι ότι θέλετε να διαγράψετε τον χρήστη ${user.full_name}; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.`,
+                'Διαγραφή χρήστη: ' + user.full_name + ' (' + user.username + ');',
                 async () => {
                     showLoading();
 
                     try {
-                        const { error } = await _supabase
-                            .from('users')
-                            .delete()
-                            .eq('id', userId);
-
+                        const { error } = await _supabase.from('users').delete().eq('id', userId);
                         if (error) throw error;
 
-                        await Auth.logActivity('delete', 'user', userId, { 
-                            email: user.email,
-                            full_name: user.full_name
-                        });
-
-                        showToast('Ο χρήστης διαγράφηκε επιτυχώς', 'success');
+                        await Auth.logActivity('delete', 'user', userId, { username: user.username });
+                        showToast('Ο χρήστης διαγράφηκε', 'success');
                         loadUsers();
 
                     } catch (err) {
-                        showToast('Σφάλμα διαγραφής: ' + err.message, 'error');
+                        showToast('Σφάλμα: ' + err.message, 'error');
                     }
 
                     hideLoading();
