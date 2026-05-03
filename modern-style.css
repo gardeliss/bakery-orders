@@ -854,51 +854,70 @@ textarea.form-control {
    ============================================ */
 
 @media print {
-    /* Hide everything except print area */
-    body * {
-        visibility: hidden;
+    /* Force desktop layout */
+    body {
+        padding: 0 !important;
+        background: white !important;
+        margin: 0 !important;
     }
     
-    #printArea,
-    #printArea * {
-        visibility: visible;
-    }
-    
-    #printArea {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-    
-    /* Hide navigation, headers, buttons */
+    /* Hide ALL page elements */
     .top-header,
     .navbar,
     .bottom-nav,
     .fab,
     .mobile-user-icon,
-    .card-header,
-    .btn,
-    .form-control,
-    .search-bar,
+    .container,
+    .card,
     .stats-grid,
-    .order-actions {
+    .btn-group,
+    button,
+    .btn,
+    nav,
+    header,
+    footer {
         display: none !important;
     }
     
-    /* Remove margins and padding */
+    /* Show ONLY printArea */
+    #printArea {
+        display: block !important;
+        visibility: visible !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        page-break-after: auto;
+    }
+    
+    #printArea * {
+        visibility: visible !important;
+    }
+    
+    /* Black text, white background */
+    #printArea,
+    #printArea * {
+        color: #000 !important;
+        background: #fff !important;
+    }
+    
+    /* Remove box shadows */
+    #printArea * {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+    
+    /* Page settings */
     @page {
-        margin: 1cm;
+        margin: 1.5cm;
+        size: A4;
     }
     
-    body {
-        padding: 0;
-        background: white;
+    /* Keep borders for tables */
+    #printArea table {
+        border-collapse: collapse !important;
     }
     
-    /* Ensure black text on white background */
-    * {
-        color: black !important;
-        background: white !important;
-    }
-}
+    #printArea table,
+    #printArea th,
+    #printArea td {
