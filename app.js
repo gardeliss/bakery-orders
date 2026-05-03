@@ -106,7 +106,7 @@ const Auth = {
                 action: action,
                 entity_type: entity_type,
                 entity_id: entity_id,
-                details: details
+                details: JSON.stringify(details)  // ← ΑΛΛΑΓΗ: Convert to JSON string
             }]);
         } catch (err) {
             console.error('Failed to log activity:', err);
