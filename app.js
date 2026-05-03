@@ -479,19 +479,19 @@ function showMobileMenu() {
     let adminItems = '';
     
     if (user && user.role === 'admin') {
-        adminItems = '<a href="activity-log.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50;">📝 Ιστορικό Ενεργειών</a>' +
-            '<a href="backup.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50;">💾 Backup & Restore</a>' +
-            '<a href="users.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50;">👤 Χρήστες</a>';
+        adminItems = 
+            '<a href="activity-log.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50; font-size:1rem;">📝 Ιστορικό Ενεργειών</a>' +
+            '<a href="backup.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50; font-size:1rem;">💾 Backup & Restore</a>' +
+            '<a href="users.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50; font-size:1rem;">👤 Διαχείριση Χρηστών</a>';
     }
     
     const content = 
-        '<div style="padding:20px;">' +
-            '<h3 style="margin-bottom:20px; color:#2a5a5a;">Περισσότερα</h3>' +
+        '<div style="padding:0;">' +
+            '<a href="order-form.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50; font-size:1rem;">➕ Νέα Παραγγελία</a>' +
             adminItems +
-            '<a href="order-form.html" style="display:block; padding:15px; border-bottom:1px solid #eee; text-decoration:none; color:#2c3e50;">➕ Νέα Παραγγελία</a>' +
         '</div>';
     
-    showModal('Μενού', content, [
+    showModal('📱 Μενού', content, [
         { text: 'Κλείσιμο', class: 'btn-secondary' }
     ]);
 }
