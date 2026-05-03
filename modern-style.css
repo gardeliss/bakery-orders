@@ -933,4 +933,12 @@ textarea.form-control {
         max-width: 100% !important;
         height: auto !important;
     }
+   
+   /* Logo size in print */  ← ΝΕΟ!
+    #printArea img[src="banner.png"] {
+        max-width: 200px !important;
+        height: auto !important;
+        display: block !important;
+        margin: 0 auto 20px !important;
+    }
 }
