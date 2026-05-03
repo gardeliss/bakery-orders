@@ -1133,6 +1133,59 @@ textarea.form-control {
         margin: 1.5cm;
         size: A4;
     }
+   
+    /* ← ΠΡΟΣΘΕΣΕ ΑΠΟ ΕΔΩ */
+    /* Force single page */
+    #printArea {
+        transform-origin: top left;
+        page-break-inside: avoid;
+    }
+    
+    /* Scale content to fit one page */
+    #printArea > * {
+        page-break-inside: avoid;
+    }
+    
+    /* Reduce image grid size for single page */
+    #printArea img {
+        max-width: 100% !important;
+        height: auto !important;
+        page-break-inside: avoid;
+    }
+    
+    /* Image grid in print - 4 columns → 2 columns for more space */
+    #printArea > div[style*="grid"] {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        margin: 10px 0 !important;
+    }
+    
+    /* Reduce all font sizes slightly */
+    #printArea {
+        font-size: 0.9em !important;
+    }
+    
+    #printArea h2 {
+        font-size: 1.3em !important;
+        margin-bottom: 10px !important;
+    }
+    
+    #printArea p {
+        margin: 4px 0 !important;
+        line-height: 1.3 !important;
+    }
+    
+    #printArea div[style*="border"] {
+        padding: 10px !important;
+        margin: 10px 0 !important;
+    }
+    
+    /* Compact spacing */
+    #printArea > div {
+        margin-bottom: 8px !important;
+    }
+    /* ← ΤΕΛΟΣ ΠΡΟΣΘΗΚΗΣ */
     
     /* Keep borders for tables */
     #printArea table {
