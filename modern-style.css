@@ -847,3 +847,58 @@ textarea.form-control {
 {
     /* Keep from original CSS - no changes needed */
 }
+
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+    /* Hide everything except print area */
+    body * {
+        visibility: hidden;
+    }
+    
+    #printArea,
+    #printArea * {
+        visibility: visible;
+    }
+    
+    #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    
+    /* Hide navigation, headers, buttons */
+    .top-header,
+    .navbar,
+    .bottom-nav,
+    .fab,
+    .mobile-user-icon,
+    .card-header,
+    .btn,
+    .form-control,
+    .search-bar,
+    .stats-grid,
+    .order-actions {
+        display: none !important;
+    }
+    
+    /* Remove margins and padding */
+    @page {
+        margin: 1cm;
+    }
+    
+    body {
+        padding: 0;
+        background: white;
+    }
+    
+    /* Ensure black text on white background */
+    * {
+        color: black !important;
+        background: white !important;
+    }
+}
