@@ -853,6 +853,10 @@ textarea.form-control {
    PRINT STYLES
    ============================================ */
 
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
 @media print {
     /* Force desktop layout */
     body {
@@ -921,3 +925,12 @@ textarea.form-control {
     #printArea table,
     #printArea th,
     #printArea td {
+        border: 1px solid #000 !important;
+    }
+    
+    /* Ensure images fit */
+    #printArea img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+}
