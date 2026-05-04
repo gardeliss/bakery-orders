@@ -153,10 +153,16 @@
                     displayAgenda(dateStr);
                 },
                 onDayCreate: function(dObj, dStr, fp, dayElem) {
+                    if (!dayElem.dateObj) return;
+    
                     const date = dayElem.dateObj.toISOString().split('T')[0];
-                    if (datesWithOrders.includes(date)) {
-                        const count = allOrders.filter(o => o.delivery_date === date).length;
-                        dayElem.innerHTML += '<span class="day-indicator" title="' + count + ' παραγγελίες"></span>';
+                    const ordersForDay = allOrders.filter(o => o.delivery_date === date);
+    
+                    if (ordersForDay.length > 0) {
+                        const indicator = document.createElement('span');
+                        indicator.className = 'day-indicator';
+                        indicator.title = ordersForDay.length + ' παραγγελίες';
+                        dayElem.appendChild(indicator);
                     }
                 }
             });
