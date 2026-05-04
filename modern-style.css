@@ -1132,6 +1132,13 @@ textarea.form-control {
     @page {
         margin: 1.5cm;
         size: A4;
+       /* Hide URL and page numbers */
+       @top-left { content: none; }
+       @top-center { content: none; }
+       @top-right { content: none; }
+       @bottom-left { content: none; }
+       @bottom-center { content: none; }
+       @bottom-right { content: none; }
     }
    
     /* ← ΠΡΟΣΘΕΣΕ ΑΠΟ ΕΔΩ */
