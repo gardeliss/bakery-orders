@@ -141,32 +141,39 @@
             hideLoading();
         }
 
-        function initCalendar() {
-            const datesWithOrders = [...new Set(allOrders.map(o => o.delivery_date))];
-
-            calendar = flatpickr("#datePicker", {
-                locale: "gr",
-                inline: true,
-                defaultDate: selectedDate,
-                onChange: function(selectedDates, dateStr) {
-                    selectedDate = dateStr;
-                    displayAgenda(dateStr);
-                },
-                onDayCreate: function(dObj, dStr, fp, dayElem) {
-                    if (!dayElem.dateObj) return;
-    
-                    const date = dayElem.dateObj.toISOString().split('T')[0];
-                    const ordersForDay = allOrders.filter(o => o.delivery_date === date);
-    
-                    if (ordersForDay.length > 0) {
-                        const indicator = document.createElement('span');
-                        indicator.className = 'day-indicator';
-                        indicator.title = ordersForDay.length + ' παραγγελίες';
-                        dayElem.appendChild(indicator);
-                    }
-                }
-            });
+function initCalendar() {
+    // Get unique dates with orders
+    const datesWithOrders = {};
+    allOrders.forEach(order => {
+        if (!datesWithOrders[order.delivery_date]) {
+            datesWithOrders[order.delivery_date] = 0;
         }
+        datesWithOrders[order.delivery_date]++;
+    });
+
+    calendar = flatpickr("#datePicker", {
+        locale: "gr",
+        inline: true,
+        defaultDate: selectedDate,
+        onChange: function(selectedDates, dateStr) {
+            selectedDate = dateStr;
+            displayAgenda(dateStr);
+        },
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            if (!dayElem || !dayElem.dateObj) return;
+            
+            const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+            
+            if (datesWithOrders[dateStr] && datesWithOrders[dateStr] > 0) {
+                const indicator = document.createElement('span');
+                indicator.className = 'day-indicator';
+                indicator.title = datesWithOrders[dateStr] + ' παραγγελίες';
+                indicator.style.cssText = 'display:inline-block; width:6px; height:6px; border-radius:50%; background:#2a5a5a; margin-left:4px;';
+                dayElem.appendChild(indicator);
+            }
+        }
+    });
+}
 
         function displayAgenda(dateStr) {
             const date = new Date(dateStr);
