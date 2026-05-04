@@ -1206,7 +1206,7 @@ textarea.form-control {
    
    /* Logo size in print */  ← ΝΕΟ!
     #printArea img[src="banner.png"] {
-        max-width: 200px !important;
+        max-width: 160px !important;
         height: auto !important;
         display: block !important;
         margin: 0 auto 20px !important;
