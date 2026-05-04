@@ -132,13 +132,18 @@ async function fetchOrders() {
 
         allOrders = data || [];
         
-        // Destroy old calendar if exists
-        if (calendar) {
-            calendar.destroy();
+        // FIRST: Init calendar without indicators
+        if (!calendar) {
+            initCalendar();
         }
         
-        initCalendar();
-        displayAgenda(selectedDate);
+        // THEN: Redraw to show indicators
+        setTimeout(() => {
+            if (calendar) {
+                calendar.redraw();
+            }
+            displayAgenda(selectedDate);
+        }, 100);
 
     } catch (err) {
         showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
@@ -157,21 +162,26 @@ function initCalendar() {
             displayAgenda(dateStr);
         },
         onDayCreate: function(dObj, dStr, fp, dayElem) {
-            // Skip if not valid
             if (!dayElem || !dayElem.dateObj) return;
             
-            // Get date string
-            const year = dayElem.dateObj.getFullYear();
-            const month = String(dayElem.dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dayElem.dateObj.getDate()).padStart(2, '0');
-            const dateStr = year + '-' + month + '-' + day;
+            // Format date properly
+            const d = dayElem.dateObj;
+            const dateStr = d.getFullYear() + '-' + 
+                String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(d.getDate()).padStart(2, '0');
             
-            // Count orders for this date
-            const count = allOrders.filter(o => o.delivery_date === dateStr).length;
+            // Check if this date has orders
+            const hasOrders = allOrders.some(order => order.delivery_date === dateStr);
             
-            // Add indicator ONLY if there are orders
-            if (count > 0) {
-                dayElem.innerHTML = dayElem.innerHTML + '<span style="display:block; width:4px; height:4px; background:#2a5a5a; border-radius:50%; margin:2px auto 0;"></span>';
+            if (hasOrders) {
+                const count = allOrders.filter(o => o.delivery_date === dateStr).length;
+                
+                // Create indicator
+                const dot = document.createElement('div');
+                dot.style.cssText = 'width:6px;height:6px;background:#2a5a5a;border-radius:50%;margin:2px auto 0;';
+                dot.title = count + ' παραγγελίες';
+                
+                dayElem.appendChild(dot);
             }
         }
     });
