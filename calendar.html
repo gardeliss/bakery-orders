@@ -119,38 +119,35 @@
         let selectedDate = new Date().toISOString().split('T')[0];
         let calendar;
 
-        async function fetchOrders() {
-            showLoading();
+async function fetchOrders() {
+    showLoading();
 
-            try {
-                const { data, error } = await _supabase
-                    .from('orders')
-                    .select('*')
-                    .order('delivery_date', { ascending: true });
+    try {
+        const { data, error } = await _supabase
+            .from('orders')
+            .select('*')
+            .order('delivery_date', { ascending: true });
 
-                if (error) throw error;
+        if (error) throw error;
 
-                allOrders = data || [];
-                initCalendar();
-                displayAgenda(selectedDate);
-
-            } catch (err) {
-                showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
-            }
-
-            hideLoading();
+        allOrders = data || [];
+        
+        // Destroy old calendar if exists
+        if (calendar) {
+            calendar.destroy();
         }
+        
+        initCalendar();
+        displayAgenda(selectedDate);
+
+    } catch (err) {
+        showToast('Σφάλμα φόρτωσης: ' + err.message, 'error');
+    }
+
+    hideLoading();
+}
 
 function initCalendar() {
-    // Get unique dates with orders
-    const datesWithOrders = {};
-    allOrders.forEach(order => {
-        if (!datesWithOrders[order.delivery_date]) {
-            datesWithOrders[order.delivery_date] = 0;
-        }
-        datesWithOrders[order.delivery_date]++;
-    });
-
     calendar = flatpickr("#datePicker", {
         locale: "gr",
         inline: true,
@@ -160,16 +157,21 @@ function initCalendar() {
             displayAgenda(dateStr);
         },
         onDayCreate: function(dObj, dStr, fp, dayElem) {
+            // Skip if not valid
             if (!dayElem || !dayElem.dateObj) return;
             
-            const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+            // Get date string
+            const year = dayElem.dateObj.getFullYear();
+            const month = String(dayElem.dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dayElem.dateObj.getDate()).padStart(2, '0');
+            const dateStr = year + '-' + month + '-' + day;
             
-            if (datesWithOrders[dateStr] && datesWithOrders[dateStr] > 0) {
-                const indicator = document.createElement('span');
-                indicator.className = 'day-indicator';
-                indicator.title = datesWithOrders[dateStr] + ' παραγγελίες';
-                indicator.style.cssText = 'display:inline-block; width:6px; height:6px; border-radius:50%; background:#2a5a5a; margin-left:4px;';
-                dayElem.appendChild(indicator);
+            // Count orders for this date
+            const count = allOrders.filter(o => o.delivery_date === dateStr).length;
+            
+            // Add indicator ONLY if there are orders
+            if (count > 0) {
+                dayElem.innerHTML = dayElem.innerHTML + '<span style="display:block; width:4px; height:4px; background:#2a5a5a; border-radius:50%; margin:2px auto 0;"></span>';
             }
         }
     });
