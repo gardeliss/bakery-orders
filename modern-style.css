@@ -1219,3 +1219,33 @@ textarea.form-control {
         margin: 0 auto 20px !important;
     }
 }
+/* Calendar Print Buttons - Mobile Layout */
+.print-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.print-row-1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.print-row-2 {
+    display: block;
+}
+
+@media (min-width: 769px) {
+    .print-buttons {
+        flex-direction: row;
+    }
+    
+    .print-row-1 {
+        display: contents;
+    }
+    
+    .print-row-2 {
+        display: contents;
+    }
+}
