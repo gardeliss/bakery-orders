@@ -432,7 +432,7 @@ body {
    ============================================ */
 
 .form-group {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: 11px;  /* 30% λιγότερο από 16px */
 }
 
 .form-label {
@@ -462,8 +462,8 @@ body {
 .form-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
+    gap: 11px;
+    margin-bottom: 11px;
 }
 
 textarea.form-control {
