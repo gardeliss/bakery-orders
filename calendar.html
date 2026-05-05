@@ -360,50 +360,50 @@ function initCalendar() {
             Auth.logActivity('print', 'order', null, { type: 'weekly_table', count: data.filtered.length });
         }
 
-        function printMonthly() {
-            const monthStr = prompt("Εισάγετε μήνα (YYYY-MM):", new Date().toISOString().substring(0, 7));
-            if (!monthStr) return;
+       function printMonthly() {
+    const monthStr = prompt("Εισάγετε μήνα (YYYY-MM):", new Date().toISOString().substring(0, 7));
+    if (!monthStr) return;
 
-            const monthOrders = allOrders.filter(o => o.delivery_date.startsWith(monthStr));
+    const monthOrders = allOrders.filter(o => o.delivery_date.startsWith(monthStr));
 
-            if (monthOrders.length === 0) {
-                showToast('Δεν βρέθηκαν παραγγελίες', 'info');
-                return;
-            }
+    if (monthOrders.length === 0) {
+        showToast('Δεν βρέθηκαν παραγγελίες', 'info');
+        return;
+    }
 
-            const monthDate = new Date(monthStr + '-01');
-            const monthName = monthDate.toLocaleDateString('el-GR', { month: 'long', year: 'numeric' });
+    const monthDate = new Date(monthStr + '-01');
+    const monthName = monthDate.toLocaleDateString('el-GR', { month: 'long', year: 'numeric' });
 
-            let content = '<h2 style="text-align:center; color:#2a5a5a;">📊 Μηνιαίος Πίνακας - ' + monthName + '</h2>' +
-                '<table border="1" style="width:100%; border-collapse:collapse; font-size:12px; margin-top: 20px;">' +
-                '<thead><tr style="background:#2a5a5a; color:white;">' +
-                '<th style="padding:10px;">Ημ/νία</th><th style="padding:10px;">Πελάτης</th>' +
-                '<th style="padding:10px;">Τηλ.</th><th style="padding:10px;">Περιγραφή</th>' +
-                '<th style="padding:10px;">Σύνολο</th><th style="padding:10px;">Υπόλοιπο</th>' +
-                '</tr></thead><tbody>';
+    let content = '<h2 style="text-align:center; color:#2a5a5a; margin-bottom:15px;">📊 Μηνιαίος Πίνακας - ' + monthName + '</h2>' +
+        '<table border="1" style="width:100%; border-collapse:collapse; font-size:11px; page-break-inside:auto;">' +
+        '<thead><tr style="background:#2a5a5a; color:white;">' +
+        '<th style="padding:8px;">Ημ/νία</th><th style="padding:8px;">Πελάτης</th>' +
+        '<th style="padding:8px;">Τηλ.</th><th style="padding:8px;">Περιγραφή</th>' +
+        '<th style="padding:8px;">Σύνολο</th><th style="padding:8px;">Υπόλοιπο</th>' +
+        '</tr></thead><tbody>';
 
-            monthOrders.forEach((o, i) => {
-                const bgColor = i % 2 === 0 ? '#f9f9f9' : 'white';
-                content += '<tr style="background: ' + bgColor + ';">' +
-                    '<td style="padding:8px;">' + formatDate(o.delivery_date) + '</td>' +
-                    '<td style="padding:8px;"><strong>' + o.last_name + '</strong></td>' +
-                    '<td style="padding:8px;">' + o.phone + '</td>' +
-                    '<td style="padding:8px;">' + o.description.substring(0, 60) + '...</td>' +
-                    '<td style="padding:8px;"><strong>' + formatCurrency(o.total_price) + '</strong></td>' +
-                    '<td style="padding:8px;">' + formatCurrency(o.total_price - o.deposit) + '</td></tr>';
-            });
+    monthOrders.forEach((o, i) => {
+        const bgColor = i % 2 === 0 ? '#f9f9f9' : 'white';
+        content += '<tr style="background: ' + bgColor + '; page-break-inside:avoid;">' +
+            '<td style="padding:6px;">' + formatDate(o.delivery_date) + '</td>' +
+            '<td style="padding:6px;"><strong>' + o.last_name + '</strong></td>' +
+            '<td style="padding:6px;">' + o.phone + '</td>' +
+            '<td style="padding:6px;">' + o.description.substring(0, 50) + '...</td>' +
+            '<td style="padding:6px;"><strong>' + formatCurrency(o.total_price) + '</strong></td>' +
+            '<td style="padding:6px;">' + formatCurrency(o.total_price - o.deposit) + '</td></tr>';
+    });
 
-            const totalRevenue = monthOrders.reduce((sum, o) => sum + o.total_price, 0);
-            const totalRemaining = monthOrders.reduce((sum, o) => sum + (o.total_price - o.deposit), 0);
+    const totalRevenue = monthOrders.reduce((sum, o) => sum + o.total_price, 0);
+    const totalRemaining = monthOrders.reduce((sum, o) => sum + (o.total_price - o.deposit), 0);
 
-            content += '</tbody><tfoot><tr style="background:#2a5a5a; color:white; font-weight:bold;">' +
-                '<td colspan="4" style="padding:10px; text-align:right;">ΣΥΝΟΛΑ:</td>' +
-                '<td style="padding:10px;">' + formatCurrency(totalRevenue) + '</td>' +
-                '<td style="padding:10px;">' + formatCurrency(totalRemaining) + '</td></tr></tfoot></table>';
+    content += '</tbody><tfoot><tr style="background:#2a5a5a; color:white; font-weight:bold; page-break-inside:avoid;">' +
+        '<td colspan="4" style="padding:10px; text-align:right;">ΣΥΝΟΛΑ:</td>' +
+        '<td style="padding:10px;">' + formatCurrency(totalRevenue) + '</td>' +
+        '<td style="padding:10px;">' + formatCurrency(totalRemaining) + '</td></tr></tfoot></table>';
 
-            renderAndPrint(content);
-            Auth.logActivity('print', 'order', null, { type: 'monthly_table', month: monthStr, count: monthOrders.length });
-        }
+    renderAndPrint(content);
+    Auth.logActivity('print', 'order', null, { type: 'monthly_table', month: monthStr, count: monthOrders.length });
+}
 
         window.onload = fetchOrders;
     </script>
