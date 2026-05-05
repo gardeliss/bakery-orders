@@ -163,6 +163,23 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
+/* ← ΠΡΟΣΘΕΣΕ ΕΔΩ */
+@media (max-width: 768px) {
+    .header-content > div:first-child {
+        display: none;
+    }
+    
+    .logo-container {
+        margin: 0 auto;
+        text-align: center;
+    }
+    
+    .logo-nav {
+        margin: 0 auto;
+        display: block;
+    }
+}
+
 .header-content {
     max-width: 1200px;
     margin: 0 auto;
