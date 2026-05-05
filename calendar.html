@@ -78,10 +78,14 @@
                 <h2 class="card-title">📅 Ημερολόγιο Παραγγελιών</h2>
             </div>
             <div class="card-body">
-                <div class="btn-group" style="margin-bottom: 20px;">
-                    <button onclick="printWeeklyList()" class="btn btn-primary">🖨️ Εβδομαδιαία Λίστα</button>
-                    <button onclick="printWeeklyTable()" class="btn btn-secondary">🖨️ Πίνακας</button>
-                    <button onclick="printMonthly()" class="btn btn-outline">🖨️ Μηνιαίος</button>
+                <div class="print-buttons" style="margin-bottom: 20px;">
+                    <div class="print-row-1">
+                        <button onclick="printWeeklyList()" class="btn btn-primary">🖨️ Week List</button>
+                        <button onclick="printWeeklyTable()" class="btn btn-secondary">🖨️ Week Table</button>
+                    </div>
+                    <div class="print-row-2">
+                        <button onclick="printMonthly()" class="btn btn-outline">🖨️ Month</button>
+                    </div>
                 </div>
 
                 <div class="calendar-container">
