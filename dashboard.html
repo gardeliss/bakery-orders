@@ -32,26 +32,15 @@
         <!-- Statistics Cards - Horizontal Ribbon (Desktop) / 3-column (Mobile) -->
         <div class="stats-grid" id="statsGrid"></div>
 
-        <!-- Quick Actions -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">⚡ Γρήγορες Ενέργειες</h2>
-            </div>
-            <div class="card-body">
-                <div class="btn-group">
-                    <a href="order-form.html" class="btn btn-primary">➕ Νέα Παραγγελία</a>
-                    <a href="calendar.html" class="btn btn-secondary">📅 Ημερολόγιο</a>
-                    <a href="customers.html" class="btn btn-secondary">👥 Πελατολόγιο</a>
-                    <button onclick="printTodayOrders()" class="btn btn-outline">🖨️ Σημερινές</button>
-                </div>
-            </div>
-        </div>
 
         <!-- Today's Orders -->
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">📅 Σημερινές Παραγγελίες</h2>
-                <span id="todayCount" class="badge badge-info">0</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                   <span id="todayCount" class="badge badge-info">0</span>
+                    <button onclick="printTodayOrders()" class="btn btn-sm btn-primary">🖨️ Εκτύπωση</button>
+                </div>
             </div>
             <div class="card-body" id="todayOrders"></div>
         </div>
