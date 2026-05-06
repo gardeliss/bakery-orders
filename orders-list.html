@@ -300,6 +300,29 @@
             Auth.logActivity('print', 'order', orderId, { type: 'single_order' });
         }
 
+        function toggleClearBtn(inputId, btnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            btn.style.display = input.value ? 'block' : 'none';
+        }
+        
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            filterOrders();
+        }
+        
+        function clearAllFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = 'active';
+            document.getElementById('sortOrder').value = 'date_asc';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            filterOrders();
+        }
+        
+        
         window.onload = fetchOrders;
     </script>
 </body>
