@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Παραγγελίες - Ζαχαροπλαστείο Ζάχαρη</title>
     <link rel="stylesheet" href="modern-style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <div class="top-header">
@@ -68,12 +69,18 @@
 
                 <div class="form-row" style="margin-bottom: 15px;">
                     <div class="form-group">
-                        <label class="form-label">Από</label>
-                        <input type="date" id="dateFrom" class="form-control" onchange="filterOrders()">
+                        <label class="form-label">Από Ημερομηνία</label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d; z-index: 10;">📅</span>
+                            <input type="text" id="dateFrom" class="form-control" placeholder="Επιλέξτε" style="padding-left: 40px;" readonly>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Έως</label>
-                        <input type="date" id="dateTo" class="form-control" onchange="filterOrders()">
+                        <label class="form-label">Έως Ημερομηνία</label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d; z-index: 10;">📅</span>
+                            <input type="text" id="dateTo" class="form-control" placeholder="Επιλέξτε" style="padding-left: 40px;" readonly>
+                        </div>
                     </div>
                 </div>
 
@@ -100,8 +107,28 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/gr.js"></script>
     <script>
         Auth.requireAuth();
+        // Initialize Flatpickr for date filters
+            flatpickr("#dateFrom", {
+                locale: "gr",
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                onChange: function() {
+                    filterOrders();
+                }
+            });
+            
+            flatpickr("#dateTo", {
+                locale: "gr",
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                onChange: function() {
+                    filterOrders();
+                }
+            });
 
         let allOrders = [];
 
