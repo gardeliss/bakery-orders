@@ -94,15 +94,16 @@
             </div>
             <div class="card-body">
                 <!-- Search -->
-                <div style="position: relative; margin-bottom: 15px;">
+               <div style="position: relative; margin-bottom: 15px;">
                     <input 
                         type="text" 
                         id="searchInput" 
                         class="form-control" 
-                        style="padding-left: 40px;"
+                        style="padding-left: 40px; padding-right: 35px;"
                         placeholder="🔍 Αναζήτηση..."
-                        onkeyup="filterCustomers()"
+                        onkeyup="filterCustomers(); toggleClearBtn('searchInput', 'clearSearchBtn')"
                     >
+                    <span id="clearSearchBtn" class="clear-input-btn" style="display:none;" onclick="clearSearch()">×</span>
                 </div>
 
                 <!-- Sort -->
@@ -408,6 +409,18 @@
             );
         }
 
+        function toggleClearBtn(inputId, btnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            btn.style.display = input.value ? 'block' : 'none';
+        }
+        
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            filterCustomers();
+        }
+        
         window.onload = fetchCustomers;
     </script>
 </body>
