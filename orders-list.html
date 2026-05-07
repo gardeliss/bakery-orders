@@ -282,6 +282,7 @@
                         });
 
                         showToast('Η παραγγελία διαγράφηκε', 'success');
+                        await syncCustomerStats(order.phone); 
                         fetchOrders();
 
                     } catch (err) {
@@ -348,7 +349,32 @@
             document.getElementById('clearSearchBtn').style.display = 'none';
             filterOrders();
         }
+
+        async function syncCustomerStats(phone) {
+            try {
+                // Get all orders for this phone
+                const { data: orders } = await _supabase
+                    .from('orders')
+                    .select('total_price')
+                    .eq('phone', phone);
         
+                const totalOrders = orders ? orders.length : 0;
+                const totalSpent = orders ? orders.reduce((sum, o) => sum + (parseFloat(o.total_price) || 0), 0) : 0;
+        
+                // Update customer
+                await _supabase
+                    .from('customers')
+                    .update({
+                        total_orders: totalOrders,
+                        total_spent: totalSpent,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('phone', phone);
+        
+            } catch (err) {
+                console.error('Sync failed:', err);
+            }
+        }
         
         window.onload = fetchOrders;
     </script>
