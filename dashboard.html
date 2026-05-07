@@ -217,20 +217,28 @@
 
         function renderTopCustomers() {
             const tbody = document.querySelector('#topCustomersTable tbody');
-            
+    
             if (allCustomers.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: #6c757d;">Δεν υπάρχουν δεδομένα</td></tr>';
                 return;
             }
-
-            tbody.innerHTML = allCustomers.map(customer => 
+        
+            // Filter out customers with 0 orders
+            const activeCustomers = allCustomers.filter(c => c.total_orders > 0);
+        
+            if (activeCustomers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: #6c757d;">Δεν υπάρχουν πελάτες με παραγγελίες</td></tr>';
+                return;
+            }
+        
+            tbody.innerHTML = activeCustomers.map(customer => 
                 '<tr>' +
                     '<td><strong>' + customer.last_name + ' ' + customer.first_name + '</strong></td>' +
                     '<td>' + customer.total_orders + '</td>' +
                     '<td>' + formatCurrency(customer.total_spent) + '</td>' +
                 '</tr>'
             ).join('');
-        }
+        }    
 
         function getStatusText(status) {
             const statuses = {
