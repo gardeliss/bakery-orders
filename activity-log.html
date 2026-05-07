@@ -267,15 +267,43 @@
 
         function getActivityDetails(activity) {
             try {
-                const details = activity.details || {};
+                // Parse details if it's a string
+                let details = activity.details;
+                if (typeof details === 'string') {
+                    try {
+                        details = JSON.parse(details);
+                    } catch (e) {
+                        return details.substring(0, 50);
+                    }
+                }
                 
+                if (!details || Object.keys(details).length === 0) {
+                    return '-';
+                }
+                
+                // Handle different action types
                 if (activity.action === 'print') {
-                    return 'Τύπος: ' + (details.type || 'N/A');
+                    const type = details.type || 'N/A';
+                    const typeLabels = {
+                        'single_order': 'Μονή Παραγγελία',
+                        'today_orders': 'Σημερινές',
+                        'weekly_list': 'Εβδομαδιαία Λίστα',
+                        'weekly_table': 'Εβδομαδιαίος Πίνακας',
+                        'monthly_table': 'Μηνιαίος Πίνακας',
+                        'customer_report': 'Αναφορά Πελάτη'
+                    };
+                    let result = typeLabels[type] || type;
+                    if (details.count) result += ' (' + details.count + ')';
+                    if (details.date) result += ' - ' + formatDate(details.date);
+                    return result;
                 }
                 
                 if (activity.action === 'create' || activity.action === 'update') {
                     if (details.customer) {
                         return details.customer;
+                    }
+                    if (details.username) {
+                        return 'Χρήστης: ' + details.username;
                     }
                     if (details.order && details.order.first_name) {
                         return details.order.last_name + ' ' + details.order.first_name;
@@ -283,14 +311,49 @@
                 }
                 
                 if (activity.action === 'delete') {
-                    return details.customer || 'Διαγραφή';
+                    if (details.customer) {
+                        return 'Διαγράφηκε: ' + details.customer;
+                    }
+                    if (details.username) {
+                        return 'Διαγράφηκε χρήστης: ' + details.username;
+                    }
                 }
                 
                 if (activity.action === 'sync') {
                     return 'Συγχρονίστηκαν ' + (details.count || 0) + ' εγγραφές';
                 }
                 
-                return JSON.stringify(details).substring(0, 50);
+                if (activity.action === 'backup') {
+                    let result = 'Backup: ';
+                    if (details.orders) result += details.orders + ' παραγγελίες, ';
+                    if (details.customers) result += details.customers + ' πελάτες';
+                    return result;
+                }
+                
+                if (activity.action === 'restore') {
+                    if (details.type === 'database') {
+                        return 'Επαναφορά από βάση';
+                    }
+                    return 'Επαναφορά';
+                }
+                
+                if (activity.action === 'export') {
+                    return 'Export ' + (details.count || 0) + ' εγγραφών';
+                }
+                
+                // Default: show first meaningful value
+                const keys = Object.keys(details);
+                if (keys.length > 0) {
+                    const firstKey = keys[0];
+                    const value = details[firstKey];
+                    if (typeof value === 'string') {
+                        return value.substring(0, 50);
+                    }
+                    return firstKey + ': ' + value;
+                }
+                
+                return '-';
+                
             } catch (e) {
                 return '-';
             }
