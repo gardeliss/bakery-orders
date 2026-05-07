@@ -96,22 +96,27 @@ const Auth = {
         }
     },
 
-    async logActivity(action, entity_type, entity_id, details = {}) {
-        const user = this.getCurrentUser();
-        if (!user) return;
-
-        try {
-            await _supabase.from('activity_log').insert([{
-                user_id: user.id,
-                action: action,
-                entity_type: entity_type,
-                entity_id: entity_id,
-                details: JSON.stringify(details)  // ← ΑΛΛΑΓΗ: Convert to JSON string
-            }]);
-        } catch (err) {
-            console.error('Failed to log activity:', err);
-        }
-    }
+   async logActivity(action, entity_type, entity_id, details = {}) {
+       const user = this.getCurrentUser();
+       if (!user) return;
+   
+       try {
+           const { error } = await _supabase.from('activity_log').insert([{
+               user_id: user.id,
+               action: action,
+               entity_type: entity_type,
+               entity_id: entity_id,
+               details: JSON.stringify(details),
+               created_at: new Date().toISOString()
+           }]);
+           
+           if (error) {
+               console.error('Log activity error:', error);
+           }
+       } catch (err) {
+           console.error('Failed to log activity:', err);
+       }
+   }
 };
 
 // ============================================
@@ -387,6 +392,18 @@ function getGreekDayName(dateStr) {
     const days = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'];
     const date = new Date(dateStr);
     return days[date.getDay()];
+}
+
+// Convert UTC to Greek time
+function formatGreekDateTime(utcDateStr) {
+    const date = new Date(utcDateStr);
+    // Add 3 hours for Greek timezone (UTC+3 in summer, UTC+2 in winter)
+    // Using Intl API for automatic DST handling
+    const greekDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Athens' }));
+    return {
+        date: greekDate.toLocaleDateString('el-GR'),
+        time: greekDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })
+    };
 }
 
 function debounce(func, wait) {
