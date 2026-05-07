@@ -225,12 +225,7 @@
                 const user = allUsers.find(u => u.id === activity.user_id);
                 const userName = user ? user.full_name : 'Άγνωστος';
                 // Debug: log raw timestamp
-                console.log('Raw timestamp:', activity.created_at);
-                console.log('Browser time:', new Date(activity.created_at).toString());
-                
                 const greekTime = formatGreekDateTime(activity.created_at);
-                console.log('Greek time result:', greekTime);
-                
                 const dateStr = greekTime.date;
                 const timeStr = greekTime.time;
 
@@ -387,9 +382,9 @@
             filtered.forEach(activity => {
                 const user = allUsers.find(u => u.id === activity.user_id);
                 const userName = user ? user.full_name : 'Άγνωστος';
-                const timestamp = new Date(activity.created_at);
-                const dateStr = timestamp.toLocaleDateString('el-GR');
-                const timeStr = timestamp.toLocaleTimeString('el-GR');
+               const greekTime = formatGreekDateTime(activity.created_at);
+                const dateStr = greekTime.date;
+                const timeStr = greekTime.time;
                 const details = getActivityDetails(activity).replace(/,/g, ';');
 
                 csvContent += dateStr + ',' + timeStr + ',' + userName + ',' + activity.action + ',' + 
