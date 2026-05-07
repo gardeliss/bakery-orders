@@ -105,9 +105,9 @@ const Auth = {
                user_id: user.id,
                action: action,
                entity_type: entity_type,
-               entity_id: entity_id,
-               details: JSON.stringify(details),
-               created_at: new Date().toISOString()
+               entity_id: entity_id ? String(entity_id) : null,  // ← Convert to string
+               details: JSON.stringify(details)
+               // Remove created_at - let database handle it
            }]);
            
            if (error) {
