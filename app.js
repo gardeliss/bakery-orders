@@ -397,12 +397,25 @@ function getGreekDayName(dateStr) {
 // Convert UTC to Greek time
 function formatGreekDateTime(utcDateStr) {
     const date = new Date(utcDateStr);
-    // Add 3 hours for Greek timezone (UTC+3 in summer, UTC+2 in winter)
-    // Using Intl API for automatic DST handling
-    const greekDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Athens' }));
+    
+    // Direct conversion to Greek timezone
+    const dateStr = date.toLocaleDateString('el-GR', { 
+        timeZone: 'Europe/Athens',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    
+    const timeStr = date.toLocaleTimeString('el-GR', { 
+        timeZone: 'Europe/Athens',
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+    });
+    
     return {
-        date: greekDate.toLocaleDateString('el-GR'),
-        time: greekDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })
+        date: dateStr,
+        time: timeStr
     };
 }
 
